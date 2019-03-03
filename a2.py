@@ -31,18 +31,41 @@
 # import libraries
 import sys
 import cProfile
+import numpy
+import scipy
+import time
+import cv2
+from pprint import pprint
 
 part = sys.argv[1]
 
 def part1():
+    starttime = time.time()
     k, output_file = sys.argv[2],sys.argv[-1]
     input_images = {}
     for i in range(3,len(sys.argv)-1):
         input_images[i-3] = sys.argv[i]
-    print(len(sys.argv))
-    print(len(input_images))
-    print(input_images)
-    print(part)
+
+    # get keypoints and descriptors for each image
+    orb_images = {}
+    for key, image in input_images.items():
+        #print("{} = {}".format(key, image))
+        orb_images[image] = {}
+        img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+        orb = cv2.ORB_create(nfeatures=1000)
+        #keypoints, descriptors = orb.detectAndCompute(img, None)        
+        orb_images[image]['keypoints'], orb_images[image]['descriptors'] = orb.detectAndCompute(img, None)
+
+    print(time.time() - starttime)
+
+
+
+
+
+
+
+
+
 
 if part == "part1":
     cProfile.run("part1()")
