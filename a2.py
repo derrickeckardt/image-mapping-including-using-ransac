@@ -39,6 +39,17 @@ from pprint import pprint
 
 part = sys.argv[1]
 
+# Checks to see if a keypoint is within another keypoint
+def within_circle(keypoint1, keypoint2):
+    proj = (keypoint1.size/2) / (2 ** (0.5))
+    if keypoint1.pt[0] - proj < keypoint2.pt[0] and keypoint1.pt[0] + proj > keypoint2.pt[0]:
+        if keypoint1.pt[1] - proj < keypoint2.pt[1] and keypoint1.pt[1] + proj > keypoint2.pt[1]:
+            return True
+        else:
+            return False
+    else:
+        return False
+
 def part1():
     starttime = time.time()
     k, output_file = sys.argv[2],sys.argv[-1]
@@ -49,15 +60,31 @@ def part1():
     # get keypoints and descriptors for each image
     orb_images = {}
     for key, image in input_images.items():
-        #print("{} = {}".format(key, image))
         orb_images[image] = {}
         img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
         orb = cv2.ORB_create(nfeatures=1000)
-        #keypoints, descriptors = orb.detectAndCompute(img, None)        
-        orb_images[image]['keypoints'], orb_images[image]['descriptors'] = orb.detectAndCompute(img, None)
-
+        keypoints, descriptors = orb.detectAndCompute(img, None)
+        for i in range(len(keypoints)):
+            orb_images[image][i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
+        
+        
+        # non-maximum suppression
+        nonmax, i = False, 0
+        while nonmax == False:
+            for j in range(i,len(orb_images[image])):
+                if within_circle(orb_images[image][i]['keypoints'],orb_images[image][j]['keypoints']):
+                    if orb_images[image][i]['keypoints'].response > orb_images[image][j]['keypoints'].response:
+                        # remove j item
+                        orb_images[image].pop(j)
+                    else:
+                        #remove i item and break loop
+                        orb_images[image].pop(i)
+                        break
+            i += 1
+            if i > len(orb_images[image]):
+                nonmax = True
+        
     print(time.time() - starttime)
-
 
 
 
