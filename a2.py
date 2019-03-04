@@ -83,8 +83,27 @@ def part1():
             i += 1
             if i > len(orb_images[image]):
                 nonmax = True
-        
-    print(time.time() - starttime)
+    print("load all images ", time.time() - starttime)
+
+    starttime = time.time()
+    common_points_matrix = {}
+    for key1, image1 in input_images.items():
+        common_points_matrix[image1] = {}
+        for key2, image2 in input_images.items():
+            common_points = 0
+            if image1 != image2 and image1 == 'part1-images/bigben_10.jpg':  # and image2 == 'part1-images/bigben_12.jpg'
+                for i in orb_images[image1]:
+                    for j in orb_images[image2]:
+                        distance = cv2.norm(orb_images[image1][i]['descriptors'], orb_images[image2][j]['descriptors'], cv2.NORM_HAMMING)
+                        if distance <= 60:
+                            common_points += 1
+                            break
+            common_points_matrix[image1][image2] = common_points
+    #         print(image1, image2, common_points, time.time() - starttime)
+            
+    print("my bfer", common_points_matrix['part1-images/bigben_10.jpg'])
+
+    print("Descriptor matching", time.time() - starttime)
 
 
 
