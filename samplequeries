@@ -1,0 +1,1 @@
+time ./a2.py part1 2 part1-images/*.* output_file.txt
