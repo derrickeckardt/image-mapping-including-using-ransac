@@ -114,7 +114,8 @@ def part1():
 
 
 if part == "part1":
-    cProfile.run("part1()")
+    part1()
+    # cProfile.run("part1()")
 elif part == "part2":
     print(part)
 elif part == "part3":
