@@ -106,13 +106,6 @@ def part1():
     print("Descriptor matching", time.time() - starttime)
 
 
-
-
-
-
-
-
-
 if part == "part1":
     part1()
     # cProfile.run("part1()")
