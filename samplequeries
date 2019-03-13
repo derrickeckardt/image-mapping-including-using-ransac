@@ -1,1 +1,4 @@
-time ./a2.py part1 2 part1-images/*.* output_file.txt
+time ./a2.py part1 2 part1-images-micro/*.* output_file.txt
+time ./a2.py part1 3 part1-images-tiny/*.* output_file.txt
+time ./a2.py part1 10 part1-images-small/*.* output_file.txt
+time ./a2.py part1 10 part1-images/*.* output_file.txt

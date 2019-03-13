@@ -28,6 +28,16 @@
 #
 ################################################################################
 
+################################################################################
+# To fix Part 1
+# - match to second best match
+# - record the points that are the match
+# - fix the inclusion of the directory where the images are, or ask Piazza Q
+#
+#
+################################################################################
+
+
 # import libraries
 import sys
 import cProfile
@@ -35,6 +45,7 @@ import numpy
 import scipy
 import time
 import cv2
+import random
 from pprint import pprint
 
 part = sys.argv[1]
@@ -52,7 +63,7 @@ def within_circle(keypoint1, keypoint2):
 
 def part1():
     starttime = time.time()
-    k, output_file = sys.argv[2],sys.argv[-1]
+    k, output_file = int(sys.argv[2]),sys.argv[-1]
     input_images = {}
     for i in range(3,len(sys.argv)-1):
         input_images[i-3] = sys.argv[i]
@@ -85,13 +96,14 @@ def part1():
                 nonmax = True
     print("load all images ", time.time() - starttime)
 
+    # match the points
     starttime = time.time()
     common_points_matrix = {}
     for key1, image1 in input_images.items():
         common_points_matrix[image1] = {}
         for key2, image2 in input_images.items():
             common_points = 0
-            if image1 != image2 and image1 == 'part1-images/bigben_10.jpg':  # and image2 == 'part1-images/bigben_12.jpg'
+            if image1 != image2:# and image1 == 'part1-images-small/bigben_6.jpg':  # and image2 == 'part1-images-small/bigben_2.jpg'
                 for i in orb_images[image1]:
                     for j in orb_images[image2]:
                         distance = cv2.norm(orb_images[image1][i]['descriptors'], orb_images[image2][j]['descriptors'], cv2.NORM_HAMMING)
@@ -101,9 +113,19 @@ def part1():
             common_points_matrix[image1][image2] = common_points
     #         print(image1, image2, common_points, time.time() - starttime)
             
-    print("my bfer", common_points_matrix['part1-images/bigben_10.jpg'])
-
+    print("my bfer", pprint(common_points_matrix))
     print("Descriptor matching", time.time() - starttime)
+
+    # kMeans grouping
+    # we select k random images as the centroids, then we decide which group it goes to
+    # based on which one it has more connections with
+    all_images = list(input_images.values())
+    random.shuffle(all_images)
+    centroids = all_images[0:k]
+    print("Initial Centroids:",centroids)
+    for z in range(10):
+        pass
+    
 
 
 if part == "part1":
