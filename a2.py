@@ -126,7 +126,8 @@ def part1():
     centroids = all_images[0:k]
 
     for z in range(100):
-        print("Run",z,"Centroids:",sorted(centroids))
+        print("Run",z,"Centroids:")
+        pprint(sorted(centroids)))
         groupings = {}
         for centroid in centroids:
             groupings[centroid] = []
@@ -154,7 +155,8 @@ def part1():
             break
     
     
-    print("Final Centroids:",sorted(centroids))
+    print("Final Centroids:")
+    pprint(sorted(centroids))
     pprint(groupings)
     pprint(common_points_matrix)
         # 
