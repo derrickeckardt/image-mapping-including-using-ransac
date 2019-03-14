@@ -108,7 +108,7 @@ def part1():
                 for i in orb_images[image1]:
                     for j in orb_images[image2]:
                         distance = cv2.norm(orb_images[image1][i]['descriptors'], orb_images[image2][j]['descriptors'], cv2.NORM_HAMMING)
-                        if distance <= 80:
+                        if distance <= 80:  # this threshold impacts speed...
                             common_points += 1
                             break
             common_points_matrix[image1][image2] = common_points
@@ -125,7 +125,7 @@ def part1():
     random.shuffle(all_images)
     centroids = all_images[0:k]
 
-    for z in range(4):
+    for z in range(100):
         print("Run",z,"Centroids:",sorted(centroids))
         groupings = {}
         for centroid in centroids:
@@ -140,7 +140,7 @@ def part1():
             if image not in centroids:
                 groupings[max_edge[2]].extend([max_edge[1]])
         # pprint(groupings)
-        # old_centroids = centroids*1
+        old_centroids = centroids*1
         centroids = []
         for centroid, images in groupings.items():
             group_images = images + [centroid]
@@ -150,11 +150,13 @@ def part1():
                 if node_score >= max_node[0]:
                     max_node = [node_score,image1]
             centroids.extend([max_node[1]])
+        if sorted(old_centroids) == sorted(centroids):
+            break
     
     
     print("Final Centroids:",sorted(centroids))
     pprint(groupings)
-    # pprint(common_points_matrix)
+    pprint(common_points_matrix)
         # 
                 
                 
