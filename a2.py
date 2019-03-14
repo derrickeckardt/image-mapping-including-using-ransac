@@ -34,6 +34,7 @@
 # - record the points that are the match
 # - fix the inclusion of the directory where the images are, or ask Piazza Q
 # - adjust strength of link based on how good a match
+# - add voting somehow for matches
 #
 ################################################################################
 
@@ -107,7 +108,7 @@ def part1():
                 for i in orb_images[image1]:
                     for j in orb_images[image2]:
                         distance = cv2.norm(orb_images[image1][i]['descriptors'], orb_images[image2][j]['descriptors'], cv2.NORM_HAMMING)
-                        if distance <= 60:
+                        if distance <= 80:
                             common_points += 1
                             break
             common_points_matrix[image1][image2] = common_points
@@ -122,11 +123,11 @@ def part1():
     starttime = time.time()
     all_images = list(input_images.values())
     random.shuffle(all_images)
-    groupings = {}
     centroids = all_images[0:k]
 
     for z in range(4):
-        print("Run",z,"Centroids:",centroids)
+        print("Run",z,"Centroids:",sorted(centroids))
+        groupings = {}
         for centroid in centroids:
             groupings[centroid] = []
         for image in list(input_images.values()):
@@ -143,19 +144,18 @@ def part1():
         centroids = []
         for centroid, images in groupings.items():
             group_images = images + [centroid]
-            # pprint(groupings)
             max_node = [0,""]  # may need to reverse this if I do it by strength of match
             for image1 in group_images:
-                node_score = sum([common_points_matrix[image1][image2] + common_points_matrix[image1][image2] for image2 in group_images])
+                node_score = sum([common_points_matrix[image1][image2] + common_points_matrix[image2][image1] for image2 in group_images])
                 if node_score >= max_node[0]:
                     max_node = [node_score,image1]
             centroids.extend([max_node[1]])
     
     
-    print("Final Centroids:",centroids)
+    print("Final Centroids:",sorted(centroids))
     pprint(groupings)
-
-        
+    # pprint(common_points_matrix)
+        # 
                 
                 
 
