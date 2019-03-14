@@ -33,7 +33,7 @@
 # - match to second best match
 # - record the points that are the match
 # - fix the inclusion of the directory where the images are, or ask Piazza Q
-#
+# - adjust strength of link based on how good a match
 #
 ################################################################################
 
@@ -113,19 +113,54 @@ def part1():
             common_points_matrix[image1][image2] = common_points
     #         print(image1, image2, common_points, time.time() - starttime)
             
-    print("my bfer", pprint(common_points_matrix))
+    # print("my bfer", pprint(common_points_matrix))
     print("Descriptor matching", time.time() - starttime)
 
     # kMeans grouping
     # we select k random images as the centroids, then we decide which group it goes to
     # based on which one it has more connections with
+    starttime = time.time()
     all_images = list(input_images.values())
     random.shuffle(all_images)
+    groupings = {}
     centroids = all_images[0:k]
-    print("Initial Centroids:",centroids)
-    for z in range(10):
-        pass
+
+    for z in range(4):
+        print("Run",z,"Centroids:",centroids)
+        for centroid in centroids:
+            groupings[centroid] = []
+        for image in list(input_images.values()):
+            max_edge = [0, ""]  # may need to reverse this if I do it by strength of match
+            for centroid in centroids:
+                if image not in centroids:
+                    edge_score = common_points_matrix[centroid][image] + common_points_matrix[image][centroid]
+                    if edge_score >= max_edge[0]:
+                        max_edge = [edge_score, image, centroid]
+            if image not in centroids:
+                groupings[max_edge[2]].extend([max_edge[1]])
+        # pprint(groupings)
+        # old_centroids = centroids*1
+        centroids = []
+        for centroid, images in groupings.items():
+            group_images = images + [centroid]
+            # pprint(groupings)
+            max_node = [0,""]  # may need to reverse this if I do it by strength of match
+            for image1 in group_images:
+                node_score = sum([common_points_matrix[image1][image2] + common_points_matrix[image1][image2] for image2 in group_images])
+                if node_score >= max_node[0]:
+                    max_node = [node_score,image1]
+            centroids.extend([max_node[1]])
     
+    
+    print("Final Centroids:",centroids)
+    pprint(groupings)
+
+        
+                
+                
+
+    
+    print("kmeans matching", time.time() - starttime)
 
 
 if part == "part1":
