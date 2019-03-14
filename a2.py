@@ -108,7 +108,7 @@ def part1():
                 for i in orb_images[image1]:
                     for j in orb_images[image2]:
                         distance = cv2.norm(orb_images[image1][i]['descriptors'], orb_images[image2][j]['descriptors'], cv2.NORM_HAMMING)
-                        if distance <= 80:  # this threshold impacts speed...
+                        if distance <= 70:  # this threshold impacts speed...
                             common_points += 1
                             break
             common_points_matrix[image1][image2] = common_points
