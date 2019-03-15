@@ -196,6 +196,7 @@ def part2():
     # Load and create images
     base_im = cv2.imread(base_im_file)
     warp_im = cv2.imread(warp_im_file)
+    warp_im = cv2.imread("part2-images/lincoln.jpg")
     output_shape = warp_im.shape
     output_im = np.zeros(output_shape, np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
     
