@@ -39,10 +39,11 @@
 # - Add file output
 # - Add dynamic programming to speed up?
 # - For write-up -- how do we speed it up?
+# - functionize part 1 into parts
 #
 # To fix Part 2
-# - Add bilinial interpolation
-#
+# 
+# - Speed up bilineal by using a dictionary?
 #
 #
 ################################################################################
@@ -179,26 +180,23 @@ def part1():
 def transform():
     pass
 
-def bilinial(im,x,y):
+# does by lineal interpopulation for inverse warping
+# return the pixel value
+def bilineal(im,x,y):
     dx = x-int(x)
     dy = y-int(y)
-    print(int(y-dy),int(x-dx), im[int(y-dy),int(x-dx)],"\n",
-          int(y)+1,int(x)+1, im[int(y)+1,int(x)+1], "\n",
-          int(y-dy),int(x)+1, im[int(y-dy),int(x)+1], "\n",
-          int(y)+1,int(x-dx),im[int(y)+1,int(x-dx)])
-    pixel = im[int(y-dy),int(x-dx)] * (1-dx)*(1-dy)
-    pixel += im[int(y)+1,int(x)+1] * dx * dy 
-    pixel += im[int(y-dy),int(x)+1] * dx * (1-dy) 
-    pixel += im[int(y)+1,int(x-dx)] * (1-dx) * dy
-    print(pixel)
-    # return pixel
+    pixel = im[int(y-dy),int(x-dx)] * (1-dx)*(1-dy) + \
+        im[int(y)+1,int(x)+1] * dx * dy + \
+        im[int(y-dy),int(x)+1] * dx * (1-dy) + \
+        im[int(y)+1,int(x-dx)] * (1-dx) * dy
+    return pixel
 
 def part2():
     starttime = time.time()
     n = int(sys.argv[2])
     base_im_file, warp_im_file, output_im_file = sys.argv[3:6]
     refpoints = [[[int(j) for j in sys.argv[6+2*i].split(",")], [int(k) for k in sys.argv[7+2*i].split(",")]] for i in range(n)]
-    pprint(refpoints)
+    # pprint(refpoints)
     
     # Test Matrix for Test Case
     tmatrix = np.array([[0.907, 0.258, -182],
@@ -214,28 +212,27 @@ def part2():
     output_shape = warp_im.shape
     output_im = np.zeros(output_shape, np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
 
-    bilinial(warp_im,230.01,500.01)       
-    print(230.01,500.01)
-    bilinial(warp_im,230.99,500.01)       
-    print(230.99,500.01)
-    bilinial(warp_im,230.01,500.99)       
-    print(230.01,500.99)
-    bilinial(warp_im,230.99,500.99)       
-    print(230.99,500.99)
+    # bilinial(warp_im,230.01,500.01)       
+    # # print(230.01,500.01)
+    # bilinial(warp_im,230.99,500.01)       
+    # # print(230.99,500.01)
+    # bilinial(warp_im,230.01,500.99)       
+    # # print(230.01,500.99)
+    # bilinial(warp_im,230.99,500.99)       
+    # # print(230.99,500.99)
 
     
     for x in range(output_shape[1]):
         for y in range(output_shape[0]):
             pixel = np.array([x, y, 1])
             xyw = np.matmul(tmatrix_inv,pixel)
-            x_o, y_o = int(round(xyw[0] / xyw[2])), int(round(xyw[1] / xyw[2]))
-            # print("x,y,x_o, y_o")
-            # print(x,y,x_o, y_o)
-            if x_o >= 0 and x_o < output_shape[1] and y_o >= 0 and y_o < output_shape[0]:
-                output_im[y,x] = warp_im[y_o,x_o]
+            x_o, y_o = xyw[0] / xyw[2], xyw[1] / xyw[2]
+            if x_o >= 0 and x_o < output_shape[1]-1 and y_o >= 0 and y_o < output_shape[0]-1:
+                if x_o > output_shape[1]-1 or y_o > output_shape[0]-1:
+                    print(x_o,y_o)
+                output_im[y,x] = bilineal(warp_im,x_o,y_o)
             # else:
                 # no change, essentially output_im[y,x] = [0 0 0]
-
 
     cv2.imwrite(output_im_file, output_im)
         
@@ -248,7 +245,8 @@ if part == "part1":
     # profile.run("part1()")
     cProfile.run("part1()")
 elif part == "part2":
-    part2()
+    # part2()
+    cProfile.run("part2()")
 elif part == "part3":
     print(part)
 else:
