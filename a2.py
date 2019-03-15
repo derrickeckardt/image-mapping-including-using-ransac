@@ -35,6 +35,15 @@
 # - fix the inclusion of the directory where the images are, or ask Piazza Q
 # - adjust strength of link based on how good a match
 # - add voting somehow for matches
+# - Take the best x number (50?) best matches
+# - Add file output
+# - Add dynamic programming to speed up?
+# - For write-up -- how do we speed it up?
+#
+# To fix Part 2
+# - 
+#
+#
 #
 ################################################################################
 
@@ -42,12 +51,14 @@
 # import libraries
 import sys
 import cProfile
-import numpy
+import numpy as np
 import scipy
 import time
 import cv2
 import random
+import imageio
 from pprint import pprint
+import profile
 
 part = sys.argv[1]
 
@@ -165,11 +176,44 @@ def part1():
     print("kmeans matching", time.time() - starttime)
 
 
+def transform():
+    pass
+
+def part2():
+    starttime = time.time()
+    n = int(sys.argv[2])
+    base_im_file, warp_im_file, output_im_file = sys.argv[3:6]
+    refpoints = [[[int(j) for j in sys.argv[6+2*i].split(",")], [int(k) for k in sys.argv[7+2*i].split(",")]] for i in range(n)]
+    pprint(refpoints)
+    
+    # Test Matrix for Test Case
+    tmatrix = np.array([[0.907, 0.258, -182],
+                        [-0.153, 1.44, 58],
+                        [-0.000306, 0.000731, 1]])
+    
+    # Load and create images
+    base_im = cv2.imread(base_im_file)
+    warp_im = cv2.imread(warp_im_file)
+    output_shape = warp_im.shape
+    output_im = np.zeros(output_shape, np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
+    
+    
+    
+        
+    
+                        
+    print(tmatrix)
+
+
+
+
+
 if part == "part1":
-    part1()
-    # cProfile.run("part1()")
+    #part1()
+    # profile.run("part1()")
+    cProfile.run("part1()")
 elif part == "part2":
-    print(part)
+    part2()
 elif part == "part3":
     print(part)
 else:
