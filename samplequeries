@@ -5,4 +5,4 @@ time ./a2.py part1 10 part1-images/*.* output_file.txt
 
 time ./a2.py part2 n img_1.png img_2.png img_output.png img1_x1,img1_y1 img2_x1,img2_x1 ... img1_xn,img1_yn img2_xn,img2_yn
 
-time ./a2.py part2 4 part2-images/book2.jpg part2-images/book1.jpg book_output.jpg 318,256 141,131 534,372 480,159 316,670 493,630 73,473 64,601
+time ./a2.py part2 4 part2-images/book2.jpg part1-images/book1.jpg book_output.jpg 141,131 318,256 480,159 534,372 493,630 316,670 64,601 73,473

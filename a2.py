@@ -190,17 +190,31 @@ def part2():
     tmatrix = np.array([[0.907, 0.258, -182],
                         [-0.153, 1.44, 58],
                         [-0.000306, 0.000731, 1]])
-    
+                        
+    tmatrix_inv = np.linalg.inv(tmatrix)
+
     # Load and create images
     base_im = cv2.imread(base_im_file)
     warp_im = cv2.imread(warp_im_file)
     output_shape = warp_im.shape
     output_im = np.zeros(output_shape, np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
     
-    
-    
+    for x in range(output_shape[1]):
+        for y in range(output_shape[0]):
+            pixel = np.array([x, y, 1])
+            xyw = np.matmul(tmatrix_inv,pixel)
+            x_o, y_o = int(round(xyw[0] / xyw[2])), int(round(xyw[1] / xyw[2]))
+            # print("x,y,x_o, y_o")
+            # print(x,y,x_o, y_o)
+            if x_o >= 0 and x_o < output_shape[1] and y_o >= 0 and y_o < output_shape[0]:
+                output_im[y,x] = warp_im[y_o,x_o]
+            # else:
+                # no change, essentially output_im[y,x] = [0 0 0]
+
+
+    cv2.imwrite(output_im_file, output_im)
         
-    
+
                         
     print(tmatrix)
 
