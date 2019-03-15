@@ -210,19 +210,24 @@ def part2():
     starttime = time.time()
     n = int(sys.argv[2])
     base_im_file, warp_im_file, output_im_file = sys.argv[3:6]
-    refpoints = [[[int(j) for j in sys.argv[6+2*i].split(",")], [int(k) for k in sys.argv[7+2*i].split(",")]] for i in range(n)]
-    # pprint(refpoints)
+    refs = [[[int(j) for j in sys.argv[6+2*i].split(",")], [int(k) for k in sys.argv[7+2*i].split(",")]] for i in range(n)]
+    x, y,xp, yp = {}, {}, {}, {}
+    i = 1
+    # for readability later
+    for each in refs:
+        [x[i],y[i]],[xp[i],yp[i]] = each
+        i += 1
 
-    # Test Matrix for Lincoln Test Case
-    tmatrix = np.array([[0.907, 0.258, -182],
-                        [-0.153, 1.44, 58],
-                        [-0.000306, 0.000731, 1]])
-    tmatrix_inv = np.linalg.inv(tmatrix)
-    test_im = cv2.imread("part2-images/lincoln.jpg")
-    output_im = inversewarp(test_im,tmatrix_inv)
-    cv2.imwrite("part2-images/lincoln_test.jpg",output_im)
+    # # Test Matrix for Lincoln Test Case
+    # tmatrix = np.array([[0.907, 0.258, -182],
+    #                     [-0.153, 1.44, 58],
+    #                     [-0.000306, 0.000731, 1]])
+    # tmatrix_inv = np.linalg.inv(tmatrix)
+    # test_im = cv2.imread("part2-images/lincoln.jpg")
+    # output_im = inversewarp(test_im,tmatrix_inv)
+    # cv2.imwrite("part2-images/lincoln_test.jpg",output_im)
 
-    # Load and create images
+    # # Load and create images
     base_im = cv2.imread(base_im_file)
     warp_im = cv2.imread(warp_im_file)
     
@@ -234,8 +239,28 @@ def part2():
         pass
     elif n == 4:    # Projective
         # calculate transform matrix, and then its inverse
-        tmatrix = tmatrix
+        pointmatrix = np.array([[x[1],y[1],1,0,0,0,-x[1]*xp[1],-y[1]*xp[1]],
+                                [0,0,0,x[1],y[1],1,-x[1]*yp[1],-y[1]*yp[1]],
+                                [x[2],y[2],1,0,0,0,-x[2]*xp[2],-y[2]*xp[2]],
+                                [0,0,0,x[2],y[2],1,-x[2]*yp[2],-y[2]*yp[2]],
+                                [x[3],y[3],1,0,0,0,-x[3]*xp[3],-y[3]*xp[3]],
+                                [0,0,0,x[3],y[3],1,-x[3]*yp[3],-y[3]*yp[3]],
+                                [x[4],y[4],1,0,0,0,-x[4]*xp[4],-y[4]*xp[4]],
+                                [0,0,0,x[4],y[4],1,-x[4]*yp[4],-y[4]*yp[4]]
+                                ])
 
+        pointmatrix_inv = np.linalg.inv(pointmatrix)
+        primematrix = np.array([xp[1],yp[1],xp[2],yp[2],xp[3],yp[3],xp[4],yp[4]])
+
+        tmatrix = np.matmul(pointmatrix_inv,primematrix)
+        print("matmul")
+        print(tmatrix)
+
+        # np.linalg.solve(pointmatrix_inv,primematrix)
+        tmatrix = np.reshape(np.append(tmatrix,[1]),(3,3))
+        print("solve")
+        print(tmatrix)
+        
         # take the inverse of the transform matrix
         tmatrix_inv = np.linalg.inv(tmatrix)
 
