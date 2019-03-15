@@ -186,8 +186,12 @@ def bilinial(im,x,y):
           int(y)+1,int(x)+1, im[int(y)+1,int(x)+1], "\n",
           int(y-dy),int(x)+1, im[int(y-dy),int(x)+1], "\n",
           int(y)+1,int(x-dx),im[int(y)+1,int(x-dx)])
-          
-    
+    pixel = im[int(y-dy),int(x-dx)] * (1-dx)*(1-dy)
+    pixel += im[int(y)+1,int(x)+1] * dx * dy 
+    pixel += im[int(y-dy),int(x)+1] * dx * (1-dy) 
+    pixel += im[int(y)+1,int(x-dx)] * (1-dx) * dy
+    print(pixel)
+    # return pixel
 
 def part2():
     starttime = time.time()
@@ -210,7 +214,15 @@ def part2():
     output_shape = warp_im.shape
     output_im = np.zeros(output_shape, np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
 
-    bilinial(warp_im,230.4,500.72)       
+    bilinial(warp_im,230.01,500.01)       
+    print(230.01,500.01)
+    bilinial(warp_im,230.99,500.01)       
+    print(230.99,500.01)
+    bilinial(warp_im,230.01,500.99)       
+    print(230.01,500.99)
+    bilinial(warp_im,230.99,500.99)       
+    print(230.99,500.99)
+
     
     for x in range(output_shape[1]):
         for y in range(output_shape[0]):
