@@ -252,15 +252,10 @@ def part2():
         pointmatrix_inv = np.linalg.inv(pointmatrix)
         primematrix = np.array([xp[1],yp[1],xp[2],yp[2],xp[3],yp[3],xp[4],yp[4]])
 
+        # or could have used print(np.linalg.solve(pointmatrix,primematrix))
         tmatrix = np.matmul(pointmatrix_inv,primematrix)
-        print("matmul")
-        print(tmatrix)
-
-        # np.linalg.solve(pointmatrix_inv,primematrix)
         tmatrix = np.reshape(np.append(tmatrix,[1]),(3,3))
-        print("solve")
-        print(tmatrix)
-        
+
         # take the inverse of the transform matrix
         tmatrix_inv = np.linalg.inv(tmatrix)
 
