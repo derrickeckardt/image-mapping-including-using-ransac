@@ -176,11 +176,17 @@ def part1():
     
     print("kmeans matching", time.time() - starttime)
 
+def make_im_dict(im):
+    height,width,depth = im.shape
+    im_dict ={}
+    for j in range(height):
+        im_dict[j]={}
+        for i in range(width):
+            # print(j,i)
+            im_dict[j][i] = im[j,i]
+    return im_dict
 
-def transform():
-    pass
-
-# does by lineal interpopulation for inverse warping
+# does bilineal interpopulation for inverse warping
 # return the pixel value
 def bilineal(im,x,y):
     dx = x-int(x)
@@ -191,27 +197,6 @@ def bilineal(im,x,y):
         im[int(y)+1,int(x-dx)] * (1-dx) * dy
     return pixel
 
-def part2():
-    starttime = time.time()
-    n = int(sys.argv[2])
-    base_im_file, warp_im_file, output_im_file = sys.argv[3:6]
-    refpoints = [[[int(j) for j in sys.argv[6+2*i].split(",")], [int(k) for k in sys.argv[7+2*i].split(",")]] for i in range(n)]
-    # pprint(refpoints)
-    
-    # Test Matrix for Test Case
-    tmatrix = np.array([[0.907, 0.258, -182],
-                        [-0.153, 1.44, 58],
-                        [-0.000306, 0.000731, 1]])
-                        
-    tmatrix_inv = np.linalg.inv(tmatrix)
-
-    # Load and create images
-    base_im = cv2.imread(base_im_file)
-    warp_im = cv2.imread(warp_im_file)
-    warp_im = cv2.imread("part2-images/lincoln.jpg")
-    output_shape = warp_im.shape
-    output_im = np.zeros(output_shape, np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
-
     # bilinial(warp_im,230.01,500.01)       
     # # print(230.01,500.01)
     # bilinial(warp_im,230.99,500.01)       
@@ -221,20 +206,62 @@ def part2():
     # bilinial(warp_im,230.99,500.99)       
     # # print(230.99,500.99)
 
+def part2():
+    starttime = time.time()
+    n = int(sys.argv[2])
+    base_im_file, warp_im_file, output_im_file = sys.argv[3:6]
+    refpoints = [[[int(j) for j in sys.argv[6+2*i].split(",")], [int(k) for k in sys.argv[7+2*i].split(",")]] for i in range(n)]
+    # pprint(refpoints)
+
+    # Test Matrix for Lincoln Test Case
+    tmatrix = np.array([[0.907, 0.258, -182],
+                        [-0.153, 1.44, 58],
+                        [-0.000306, 0.000731, 1]])
+    tmatrix_inv = np.linalg.inv(tmatrix)
+    test_im = cv2.imread("part2-images/lincoln.jpg")
+    output_im = inversewarp(test_im,tmatrix_inv)
+    cv2.imwrite("part2-images/lincoln_test.jpg",output_im)
+
+    # Load and create images
+    base_im = cv2.imread(base_im_file)
+    warp_im = cv2.imread(warp_im_file)
     
-    for x in range(output_shape[1]):
-        for y in range(output_shape[0]):
+    if n == 1:      # translation
+        pass
+    elif n == 2:    # Euclidean (rigid)
+        pass
+    elif n == 3:    # Affine
+        pass
+    elif n == 4:    # Projective
+        # calculate transform matrix, and then its inverse
+        tmatrix = tmatrix
+
+        # take the inverse of the transform matrix
+        tmatrix_inv = np.linalg.inv(tmatrix)
+
+        output_im = inversewarp(base_im,tmatrix_inv)
+        cv2.imwrite(output_im_file, output_im)
+
+    else:
+        print("You have entered a tranform this program cannot make.  Please check your inputs.)")
+
+def inversewarp(base_im,transform_matrix_inv):
+    height, width, depth = base_im.shape
+    output_im = np.zeros((height,width,depth), np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
+
+    for x in range(width):
+        for y in range(height):
             pixel = np.array([x, y, 1])
-            xyw = np.matmul(tmatrix_inv,pixel)
+            xyw = np.matmul(transform_matrix_inv,pixel)
             x_o, y_o = xyw[0] / xyw[2], xyw[1] / xyw[2]
-            if x_o >= 0 and x_o < output_shape[1]-1 and y_o >= 0 and y_o < output_shape[0]-1:
-                if x_o > output_shape[1]-1 or y_o > output_shape[0]-1:
-                    print(x_o,y_o)
-                output_im[y,x] = bilineal(warp_im,x_o,y_o)
+            if x_o >= 0 and x_o < width-1 and y_o >= 0 and y_o < height-1:
+                output_im[y,x] = bilineal(base_im,x_o,y_o)
             # else:
                 # no change, essentially output_im[y,x] = [0 0 0]
 
-    cv2.imwrite(output_im_file, output_im)
+    return output_im
+    
+    
         
 
 
@@ -245,8 +272,9 @@ if part == "part1":
     # profile.run("part1()")
     cProfile.run("part1()")
 elif part == "part2":
-    # part2()
-    cProfile.run("part2()")
+    part2()
+    # cProfile.run("part2()")
+    # profile.run("part2()")
 elif part == "part3":
     print(part)
 else:
