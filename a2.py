@@ -74,6 +74,60 @@ def within_circle(keypoint1, keypoint2):
     else:
         return False
 
+def make_im_dict(im):
+    height,width,depth = im.shape
+    im_dict ={}
+    for j in range(height):
+        im_dict[j]={}
+        for i in range(width):
+            # print(j,i)
+            im_dict[j][i] = im[j,i]
+    return im_dict
+
+def merge(im1,im2):
+    pass
+
+
+# does bilineal interpopulation for inverse warping
+# return the pixel value
+def bilineal(im,x,y):
+    dx = x-int(x)
+    dy = y-int(y)
+    spacex = 1 if dx != 0 else 0
+    spacey = 1 if dy != 0 else 0
+    pixel = im[int(y-dy),int(x-dx)] * (1-dx)*(1-dy) + \
+        im[int(y)+spacey,int(x)+spacex] * dx * dy + \
+        im[int(y-dy),int(x)+spacex] * dx * (1-dy) + \
+        im[int(y)+spacey,int(x-dx)] * (1-dx) * dy
+    return pixel
+
+    # bilinial(warp_im,230.01,500.01)       
+    # # print(230.01,500.01)
+    # bilinial(warp_im,230.99,500.01)       
+    # # print(230.99,500.01)
+    # bilinial(warp_im,230.01,500.99)       
+    # # print(230.01,500.99)
+    # bilinial(warp_im,230.99,500.99)       
+    # # print(230.99,500.99)
+
+def inversewarp(base_im,transform_matrix_inv, output_shape):
+    height, width, depth = output_shape
+    base_height, base_width, base_depth = base_im.shape
+    output_im = np.zeros((height,width,depth), np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
+
+    for x in range(width):
+        for y in range(height):
+            pixel = np.array([x, y, 1])
+            xyw = np.matmul(transform_matrix_inv,pixel)
+            x_o, y_o = xyw[0] / xyw[2], xyw[1] / xyw[2]
+            if x_o >= 0 and x_o <= base_width-1 and y_o >= 0 and y_o <= base_height-1:
+                # print(x_o,y_o)
+                output_im[y,x] = bilineal(base_im,x_o,y_o)
+            # else:
+                # no change, essentially output_im[y,x] = [0 0 0]
+
+    return output_im
+
 def part1():
     starttime = time.time()
     k, output_file = int(sys.argv[2]),sys.argv[-1]
@@ -168,43 +222,8 @@ def part1():
     
     print("Final Centroids:", sorted(centroids))
     pprint(groupings)
-    pprint(common_points_matrix)
-        # 
-                
-                
-
-    
+    # pprint(common_points_matrix)
     print("kmeans matching", time.time() - starttime)
-
-def make_im_dict(im):
-    height,width,depth = im.shape
-    im_dict ={}
-    for j in range(height):
-        im_dict[j]={}
-        for i in range(width):
-            # print(j,i)
-            im_dict[j][i] = im[j,i]
-    return im_dict
-
-# does bilineal interpopulation for inverse warping
-# return the pixel value
-def bilineal(im,x,y):
-    dx = x-int(x)
-    dy = y-int(y)
-    pixel = im[int(y-dy),int(x-dx)] * (1-dx)*(1-dy) + \
-        im[int(y)+1,int(x)+1] * dx * dy + \
-        im[int(y-dy),int(x)+1] * dx * (1-dy) + \
-        im[int(y)+1,int(x-dx)] * (1-dx) * dy
-    return pixel
-
-    # bilinial(warp_im,230.01,500.01)       
-    # # print(230.01,500.01)
-    # bilinial(warp_im,230.99,500.01)       
-    # # print(230.99,500.01)
-    # bilinial(warp_im,230.01,500.99)       
-    # # print(230.01,500.99)
-    # bilinial(warp_im,230.99,500.99)       
-    # # print(230.99,500.99)
 
 def part2():
     starttime = time.time()
@@ -232,7 +251,22 @@ def part2():
     warp_im = cv2.imread(warp_im_file)
     
     if n == 1:      # translation
-        pass
+        dx, dy = xp[1] - x[1], yp[1] - y[1]
+        # Find translatiom matrix
+        translation_matrix = np.array([[1,0,dx],
+                                       [0,1,dy],
+                                       [0,0,1]
+                                       ])
+        translation_matrix_inv = np.linalg.inv(translation_matrix)
+        
+        # Create shape for output image
+        translation_shape = (base_im.shape[0] + dy, base_im.shape[1] + dx, base_im.shape[2])
+        
+        # create output image
+        output_im = inversewarp(base_im,translation_matrix_inv, translation_shape)
+        cv2.imwrite(output_im_file, output_im)
+        print("Image '"+base_im_file+"' has been translated and saved as '"+output_im_file+"'.  That was a nice move." )
+
     elif n == 2:    # Euclidean (rigid)
         pass
     elif n == 3:    # Affine
@@ -259,27 +293,14 @@ def part2():
         # take the inverse of the transform matrix
         tmatrix_inv = np.linalg.inv(tmatrix)
 
-        output_im = inversewarp(base_im,tmatrix_inv)
+        output_im = inversewarp(base_im,tmatrix_inv, base_im.shape)
         cv2.imwrite(output_im_file, output_im)
+        print("Image '"+base_im_file+"' has been translated and saved as '"+output_im_file+"'.  I feel bent out of shape." )
+
 
     else:
         print("You have entered a tranform this program cannot make.  Please check your inputs.)")
 
-def inversewarp(base_im,transform_matrix_inv):
-    height, width, depth = base_im.shape
-    output_im = np.zeros((height,width,depth), np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
-
-    for x in range(width):
-        for y in range(height):
-            pixel = np.array([x, y, 1])
-            xyw = np.matmul(transform_matrix_inv,pixel)
-            x_o, y_o = xyw[0] / xyw[2], xyw[1] / xyw[2]
-            if x_o >= 0 and x_o < width-1 and y_o >= 0 and y_o < height-1:
-                output_im[y,x] = bilineal(base_im,x_o,y_o)
-            # else:
-                # no change, essentially output_im[y,x] = [0 0 0]
-
-    return output_im
     
     
         
@@ -299,3 +320,4 @@ elif part == "part3":
     print(part)
 else:
     print("You did not enter 'part1', 'part2', or 'part3' to run the program. Please check your input.  Thank you.")
+
