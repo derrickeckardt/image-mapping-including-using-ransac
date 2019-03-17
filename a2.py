@@ -291,12 +291,12 @@ def part2():
        
     elif n == 3:    # Affine
         # calculate affine matrix, and then it's reverse
-        pointmatrix = np.array([[x[1],y[1],1,0,0,0,-x[1]*xp[1],-y[1]*xp[1]],
-                                [0,0,0,x[1],y[1],1,-x[1]*yp[1],-y[1]*yp[1]],
-                                [x[2],y[2],1,0,0,0,-x[2]*xp[2],-y[2]*xp[2]],
-                                [0,0,0,x[2],y[2],1,-x[2]*yp[2],-y[2]*yp[2]],
-                                [x[3],y[3],1,0,0,0,-x[3]*xp[3],-y[3]*xp[3]],
-                                [0,0,0,x[3],y[3],1,-x[3]*yp[3],-y[3]*yp[3]]
+        pointmatrix = np.array([[x[1],y[1],1,0,0,0],
+                                [0,0,0,x[1],y[1],1],
+                                [x[2],y[2],1,0,0,0],
+                                [0,0,0,x[2],y[2],1],
+                                [x[3],y[3],1,0,0,0],
+                                [0,0,0,x[3],y[3],1]
                                 ])
         pointmatrix_inv = np.linalg.inv(pointmatrix)
         primematrix = np.array([xp[1],yp[1],xp[2],yp[2],xp[3],yp[3]])
@@ -309,7 +309,7 @@ def part2():
         # take the inverse of the affine matrix
         amatrix_inv = np.linalg.inv(amatrix)
         
-        output_im = inversewarp(base_im,tmatrix_inv, base_im.shape)
+        output_im = inversewarp(base_im,amatrix_inv, base_im.shape)
         cv2.imwrite(output_im_file, output_im)
         print("Image '"+base_im_file+"' has made an affice transformation and saved as '"+output_im_file+"'.  That was tripy" )
 
