@@ -44,7 +44,7 @@
 # To fix Part 2
 # - create better boudning boxes for part 2, 3, and perhaps 4
 # - Speed up bilineal by using a dictionary?  (Tried it, was acutally slower)
-#
+# - refactor code to reduce redundancies between each
 #
 ################################################################################
 
@@ -129,6 +129,31 @@ def inversewarp(base_im,transform_matrix_inv, output_shape):
 
     return output_im
 
+def match_descriptors(descriptors1, descriptors2):
+    pass
+
+# takes as input of an image as described by keypoints and descriptors that have
+# been placed in a dictorary, in the form:
+    # image[i] = {'keypoints': keypoints[i], 'descriptors':descriptors[i]}
+    # image["name"] = image (as string)
+# where keypoints, descriptors are generated from:
+    # img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+    # orb = cv2.ORB_create(nfeatures=1000)
+    # keypoints, descriptors = orb.detectAndCompute(img, None)
+# and then saved in as a dictionary via:
+#     for i in range(len(keypoints)):
+#             image[i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
+def match_images(image1, image2):
+    common_points = 0
+    if image1['name'] != image2['name']:# and image1 == 'part1-images-small/bigben_6.jpg':  # and image2 == 'part1-images-small/bigben_2.jpg'
+        for i in image1['orb']:
+            for j in image2['orb']:
+                distance = cv2.norm(image1['orb'][i]['descriptors'], image2['orb'][j]['descriptors'], cv2.NORM_HAMMING)
+                if distance <= 50:  # this threshold impacts speed...
+                    common_points += 1
+                    break
+    return common_points
+
 def part1():
     starttime = time.time()
     k, output_file = int(sys.argv[2]),sys.argv[-1]
@@ -137,56 +162,47 @@ def part1():
         input_images[i-3] = sys.argv[i]
 
     # get keypoints and descriptors for each image
+    print("Beginning loading images,  Expected run time for this part is approximately "+str(round(len(input_images)/60,3))+" seconds.")
     orb_images = {}
     for key, image in input_images.items():
-        orb_images[image] = {}
+        orb_images[image] = {"name":image, "orb":{}}
         img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
         orb = cv2.ORB_create(nfeatures=1000)
         keypoints, descriptors = orb.detectAndCompute(img, None)
         for i in range(len(keypoints)):
-            orb_images[image][i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
-        
+            orb_images[image]['orb'][i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
         
         # non-maximum suppression
         nonmax, i = False, 0
         while nonmax == False:
-            for j in range(i,len(orb_images[image])):
-                if within_circle(orb_images[image][i]['keypoints'],orb_images[image][j]['keypoints']):
-                    if orb_images[image][i]['keypoints'].response > orb_images[image][j]['keypoints'].response:
+            for j in range(i,len(orb_images[image]['orb'])):
+                if within_circle(orb_images[image]['orb'][i]['keypoints'],orb_images[image]['orb'][j]['keypoints']):
+                    if orb_images[image]['orb'][i]['keypoints'].response > orb_images[image]['orb'][j]['keypoints'].response:
                         # remove j item
-                        orb_images[image].pop(j)
+                        orb_images[image]['orb'].pop(j)
                     else:
                         #remove i item and break loop
-                        orb_images[image].pop(i)
+                        orb_images[image]['orb'].pop(i)
                         break
             i += 1
-            if i > len(orb_images[image]):
+            if i > len(orb_images[image]['orb']):
                 nonmax = True
-    print("load all images ", time.time() - starttime)
+    print("Completed loading all "+str(len(orb_images)) +" images with Non Maximal Suppression in "+str(round(time.time() - starttime,3))+" seconds.")
 
     # match the points
+    print("Beginning image matching.  Expected run time for this part is appoximately "+str(round((len(orb_images)*(len(orb_images)-1))/3,3))+" seconds.")
     starttime = time.time()
     common_points_matrix = {}
-    for key1, image1 in input_images.items():
+    for image1 in orb_images.keys():
         common_points_matrix[image1] = {}
-        for key2, image2 in input_images.items():
-            common_points = 0
-            if image1 != image2:# and image1 == 'part1-images-small/bigben_6.jpg':  # and image2 == 'part1-images-small/bigben_2.jpg'
-                for i in orb_images[image1]:
-                    for j in orb_images[image2]:
-                        distance = cv2.norm(orb_images[image1][i]['descriptors'], orb_images[image2][j]['descriptors'], cv2.NORM_HAMMING)
-                        if distance <= 50:  # this threshold impacts speed...
-                            common_points += 1
-                            break
-            common_points_matrix[image1][image2] = common_points
-    #         print(image1, image2, common_points, time.time() - starttime)
-            
-    # print("my bfer", pprint(common_points_matrix))
-    print("Descriptor matching", time.time() - starttime)
+        for image2 in orb_images.keys():
+            common_points_matrix[image1][image2] = match_images(orb_images[image1],orb_images[image2])
+    print("Completed matching all "+str(len(orb_images)*(len(orb_images)-1)) +" pairs of images in "+str(round(time.time() - starttime,3))+" seconds.")
 
-    # kMeans grouping
-    # we select k random images as the centroids, then we decide which group it goes to
-    # based on which one it has more connections with
+    # kMeans grouping -- I select k random images as the centroids, then decide 
+    # which group the remaining images goes to based on which one it has more
+    # connections with -- huge opportunity for improvement
+    print("Beginning clustering via k-Means.  Estimated run time is a blink of the eye.")
     starttime = time.time()
     all_images = list(input_images.values())
     random.shuffle(all_images)
@@ -223,8 +239,12 @@ def part1():
     
     print("Final Centroids:", sorted(centroids))
     pprint(groupings)
-    # pprint(common_points_matrix)
-    print("kmeans matching", time.time() - starttime)
+    pprint(common_points_matrix)
+    print("Completed kmeans clustering of "+str(len(orb_images))+" into "+str(k)+" clusters in "+str(round(time.time() - starttime,3))+" seconds.")
+    
+    # Insert clustering output
+    
+    print("Clusters can be viewed in '"+output_file+"'.  I hope you like my clusters!")
 
 def part2():
     starttime = time.time()
@@ -351,9 +371,9 @@ def part2():
 
 
 if part == "part1":
-    #part1()
+    part1()
     # profile.run("part1()")
-    cProfile.run("part1()")
+    # cProfile.run("part1()")
 elif part == "part2":
     part2()
     # cProfile.run("part2()")
