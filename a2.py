@@ -42,8 +42,8 @@
 # - functionize part 1 into parts
 #
 # To fix Part 2
-# 
-# - Speed up bilineal by using a dictionary?
+# - create better boudning boxes for part 2, 3, and perhaps 4
+# - Speed up bilineal by using a dictionary?  (Tried it, was acutally slower)
 #
 #
 ################################################################################
@@ -58,6 +58,7 @@ import time
 import cv2
 import random
 import imageio
+from math import atan, cos, sin
 from pprint import pprint
 import profile
 
@@ -267,10 +268,51 @@ def part2():
         cv2.imwrite(output_im_file, output_im)
         print("Image '"+base_im_file+"' has been translated and saved as '"+output_im_file+"'.  That was a nice move." )
 
-    elif n == 2:    # Euclidean (rigid)
-        pass
+    elif n == 2: # Euclidean (rigid)
+        theta1 = atan((y[2]-y[1]) / (x[2]-x[1]))
+        theta2 = atan((yp[2]-yp[1]) / (xp[2]-xp[1]))
+        theta = theta2-theta1  # radians
+
+        dx, dy = xp[1] - x[1], yp[1] - y[1]
+        # Find translatiom matrix
+        translation_matrix = np.array([[cos(theta),-sin(theta),dx],
+                                       [sin(theta),cos(theta),dy],
+                                       [0,0,1]
+                                       ])
+        translation_matrix_inv = np.linalg.inv(translation_matrix)
+ 
+         # Create shape for output image
+        # translation_shape = (base_im.shape[0] + dy, base_im.shape[1] + dx, base_im.shape[2])
+        
+        # create output image
+        output_im = inversewarp(base_im,translation_matrix_inv, base_im.shape)  #translation_shape
+        cv2.imwrite(output_im_file, output_im)
+        print("Image '"+base_im_file+"' has made a rigid transformation and is saved at '"+output_im_file+"'.  Nice spinning, DJ." )
+       
     elif n == 3:    # Affine
-        pass
+        # calculate affine matrix, and then it's reverse
+        pointmatrix = np.array([[x[1],y[1],1,0,0,0,-x[1]*xp[1],-y[1]*xp[1]],
+                                [0,0,0,x[1],y[1],1,-x[1]*yp[1],-y[1]*yp[1]],
+                                [x[2],y[2],1,0,0,0,-x[2]*xp[2],-y[2]*xp[2]],
+                                [0,0,0,x[2],y[2],1,-x[2]*yp[2],-y[2]*yp[2]],
+                                [x[3],y[3],1,0,0,0,-x[3]*xp[3],-y[3]*xp[3]],
+                                [0,0,0,x[3],y[3],1,-x[3]*yp[3],-y[3]*yp[3]]
+                                ])
+        pointmatrix_inv = np.linalg.inv(pointmatrix)
+        primematrix = np.array([xp[1],yp[1],xp[2],yp[2],xp[3],yp[3]])
+
+        amatrix = np.matmul(pointmatrix_inv,primematrix)
+        print(amatrix)
+        amatrix = np.reshape(np.append(amatrix,np.array([0, 0, 1])),(3,3))
+        print(amatrix)
+
+        # take the inverse of the affine matrix
+        amatrix_inv = np.linalg.inv(amatrix)
+        
+        output_im = inversewarp(base_im,tmatrix_inv, base_im.shape)
+        cv2.imwrite(output_im_file, output_im)
+        print("Image '"+base_im_file+"' has made an affice transformation and saved as '"+output_im_file+"'.  That was tripy" )
+
     elif n == 4:    # Projective
         # calculate transform matrix, and then its inverse
         pointmatrix = np.array([[x[1],y[1],1,0,0,0,-x[1]*xp[1],-y[1]*xp[1]],
