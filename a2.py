@@ -149,7 +149,7 @@ def match_images(image1, image2):
         for i in image1['orb']:
             for j in image2['orb']:
                 distance = cv2.norm(image1['orb'][i]['descriptors'], image2['orb'][j]['descriptors'], cv2.NORM_HAMMING)
-                if distance <= 50:  # this threshold impacts speed...
+                if distance <= 100:  # this threshold impacts speed...
                     common_points += 1
                     break
     return common_points
@@ -167,7 +167,7 @@ def part1():
     for key, image in input_images.items():
         orb_images[image] = {"name":image, "orb":{}}
         img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
-        orb = cv2.ORB_create(nfeatures=1000)
+        orb = cv2.ORB_create(nfeatures=100)
         keypoints, descriptors = orb.detectAndCompute(img, None)
         for i in range(len(keypoints)):
             orb_images[image]['orb'][i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
@@ -239,7 +239,7 @@ def part1():
     
     print("Final Centroids:", sorted(centroids))
     pprint(groupings)
-    pprint(common_points_matrix)
+    # pprint(common_points_matrix)
     print("Completed kmeans clustering of "+str(len(orb_images))+" into "+str(k)+" clusters in "+str(round(time.time() - starttime,3))+" seconds.")
     
     # Insert clustering output
