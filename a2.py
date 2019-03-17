@@ -129,9 +129,6 @@ def inversewarp(base_im,transform_matrix_inv, output_shape):
 
     return output_im
 
-def match_descriptors(descriptors1, descriptors2):
-    pass
-
 # takes as input of an image as described by keypoints and descriptors that have
 # been placed in a dictorary, in the form:
     # image[i] = {'keypoints': keypoints[i], 'descriptors':descriptors[i]}
@@ -153,6 +150,35 @@ def match_images(image1, image2):
                     common_points += 1
                     break
     return common_points
+    
+def simple_refs(refs):
+    x, y,xp, yp = {}, {}, {}, {}
+    i = 1
+    # for readability later
+    for each in refs:
+        [x[i],y[i]],[xp[i],yp[i]] = each
+        i += 1
+    return x, y, xp, yp
+
+def four_point_tranform_matrix(x,y,xp,yp):
+    pointmatrix = np.array([[x[1],y[1],1,0,0,0,-x[1]*xp[1],-y[1]*xp[1]],
+                        [0,0,0,x[1],y[1],1,-x[1]*yp[1],-y[1]*yp[1]],
+                        [x[2],y[2],1,0,0,0,-x[2]*xp[2],-y[2]*xp[2]],
+                        [0,0,0,x[2],y[2],1,-x[2]*yp[2],-y[2]*yp[2]],
+                        [x[3],y[3],1,0,0,0,-x[3]*xp[3],-y[3]*xp[3]],
+                        [0,0,0,x[3],y[3],1,-x[3]*yp[3],-y[3]*yp[3]],
+                        [x[4],y[4],1,0,0,0,-x[4]*xp[4],-y[4]*xp[4]],
+                        [0,0,0,x[4],y[4],1,-x[4]*yp[4],-y[4]*yp[4]]
+                        ])
+
+    pointmatrix_inv = np.linalg.inv(pointmatrix)
+    primematrix = np.array([xp[1],yp[1],xp[2],yp[2],xp[3],yp[3],xp[4],yp[4]])
+
+    # or could have used print(np.linalg.solve(pointmatrix,primematrix))
+    tmatrix = np.matmul(pointmatrix_inv,primematrix)
+    tmatrix = np.reshape(np.append(tmatrix,[1]),(3,3))
+
+    return tmatrix
 
 def part1():
     starttime = time.time()
@@ -251,12 +277,7 @@ def part2():
     n = int(sys.argv[2])
     base_im_file, warp_im_file, output_im_file = sys.argv[3:6]
     refs = [[[int(j) for j in sys.argv[6+2*i].split(",")], [int(k) for k in sys.argv[7+2*i].split(",")]] for i in range(n)]
-    x, y,xp, yp = {}, {}, {}, {}
-    i = 1
-    # for readability later
-    for each in refs:
-        [x[i],y[i]],[xp[i],yp[i]] = each
-        i += 1
+    x, y, xp, yp = simple_refs(refs)
 
     # # Test Matrix for Lincoln Test Case
     # tmatrix = np.array([[0.907, 0.258, -182],
@@ -267,13 +288,13 @@ def part2():
     # output_im = inversewarp(test_im,tmatrix_inv)
     # cv2.imwrite("part2-images/lincoln_test.jpg",output_im)
 
-    # # Load and create images
+    # Load and create images
     base_im = cv2.imread(base_im_file)
     warp_im = cv2.imread(warp_im_file)
     
     if n == 1:      # translation
         dx, dy = xp[1] - x[1], yp[1] - y[1]
-        # Find translatiom matrix
+        # Find translation matrix
         translation_matrix = np.array([[1,0,dx],
                                        [0,1,dy],
                                        [0,0,1]
@@ -335,24 +356,7 @@ def part2():
 
     elif n == 4:    # Projective
         # calculate transform matrix, and then its inverse
-        pointmatrix = np.array([[x[1],y[1],1,0,0,0,-x[1]*xp[1],-y[1]*xp[1]],
-                                [0,0,0,x[1],y[1],1,-x[1]*yp[1],-y[1]*yp[1]],
-                                [x[2],y[2],1,0,0,0,-x[2]*xp[2],-y[2]*xp[2]],
-                                [0,0,0,x[2],y[2],1,-x[2]*yp[2],-y[2]*yp[2]],
-                                [x[3],y[3],1,0,0,0,-x[3]*xp[3],-y[3]*xp[3]],
-                                [0,0,0,x[3],y[3],1,-x[3]*yp[3],-y[3]*yp[3]],
-                                [x[4],y[4],1,0,0,0,-x[4]*xp[4],-y[4]*xp[4]],
-                                [0,0,0,x[4],y[4],1,-x[4]*yp[4],-y[4]*yp[4]]
-                                ])
-
-        pointmatrix_inv = np.linalg.inv(pointmatrix)
-        primematrix = np.array([xp[1],yp[1],xp[2],yp[2],xp[3],yp[3],xp[4],yp[4]])
-
-        # or could have used print(np.linalg.solve(pointmatrix,primematrix))
-        tmatrix = np.matmul(pointmatrix_inv,primematrix)
-        tmatrix = np.reshape(np.append(tmatrix,[1]),(3,3))
-
-        # take the inverse of the transform matrix
+        tmatrix = four_point_tranform_matrix(x,y,xp,yp)
         tmatrix_inv = np.linalg.inv(tmatrix)
 
         output_im = inversewarp(base_im,tmatrix_inv, base_im.shape)
@@ -363,13 +367,78 @@ def part2():
     else:
         print("You have entered a tranform this program cannot make.  Please check your inputs.)")
 
+def part3():
+    # get command line inputs
+    im1_file, im2_file, output_im_file = sys.argv[2:5]
+
+    # Load and create images, Find interest points for images, load keypoint descriptors
+    img1 = cv2.imread(im1_file, cv2.IMREAD_GRAYSCALE)
+    orb1 = cv2.ORB_create(nfeatures=100)
+    keypoints1, descriptors1 = orb1.detectAndCompute(img1, None)
+    im1 = {"name":im1_file, "orb":{}}
+    for i in range(len(keypoints1)):
+        im1['orb'][i] = {'keypoints':keypoints1[i], 'descriptors':descriptors1[i]}
+
+    img2 = cv2.imread(im2_file, cv2.IMREAD_GRAYSCALE)
+    orb2 = cv2.ORB_create(nfeatures=100)
+    keypoints2, descriptors2 = orb2.detectAndCompute(img2, None)
+    im2 = {"name":im2_file, "orb":{}}
+    for i in range(len(keypoints2)):
+        im2['orb'][i] = {'keypoints':keypoints2[i], 'descriptors':descriptors2[i]}
     
+    # Perform matching on them
+    common_points = match_images(im1,im2)
     
-        
+    # Perform Ransac on the images
+    
+
+    #Placeholder refs until I get RANSAC done
+    refs = [[[141,131],[318,256]],[[480,159],[534,372]],[[493,630],[316,670]],[[64,601],[73,473]]]
+
+    # Calculate the transformation matrix from four points from ransac
+    x, y, xp, yp = simple_refs(refs)
+    
+    # transform one image to look the other
+    # calculate transform matrix, and then its inverse
+    tmatrix = four_point_tranform_matrix(x,y,xp,yp)
+    tmatrix_inv = np.linalg.inv(tmatrix)
+    
+    #reload images as color images now
+    img1 = cv2.imread(im1_file)
+    img2 = cv2.imread(im2_file)
+
+    # project one image onto another one
+    image1_on_2 = inversewarp(img1,tmatrix_inv, img1.shape)
+
+    
+    # merge the two images
+    height,width,depth = image1_on_2.shape
+    output_im = np.zeros((height,width,depth), np.uint8) 
+    for y in range(height):
+        for x in range(width):
+            # output_im[y,x] = np.divide(np.add(img2[y,x],image1_on_2[y,x]),2.0)
+            output_im[y,x] = np.array([(img2[y,x][0] + image1_on_2[y,x][0])/2.0, (img2[y,x][1] + image1_on_2[y,x][1])/2.0, (img2[y,x][2] + image1_on_2[y,x][2])/2.0])
+
+    
+    print("500,200")
+    print(img2[500,200])
+    print(image1_on_2[500,200])
+    print(output_im[500,200])
+
+    print("400,300")
+    print(img2[400,300])
+    print(image1_on_2[400,300])
+    print(output_im[400,300])
 
 
+    print("200,500")
+    print(img2[200,500])
+    print(image1_on_2[200,500])
+    print(output_im[200,500])
 
-
+    
+    cv2.imwrite(output_im_file, output_im)
+    
 if part == "part1":
     part1()
     # profile.run("part1()")
@@ -379,7 +448,8 @@ elif part == "part2":
     # cProfile.run("part2()")
     # profile.run("part2()")
 elif part == "part3":
-    print(part)
+    part3()
+    # cProfile.run("part2()")
 else:
     print("You did not enter 'part1', 'part2', or 'part3' to run the program. Please check your input.  Thank you.")
 
