@@ -193,7 +193,7 @@ def part1():
     for key, image in input_images.items():
         orb_images[image] = {"name":image, "orb":{}}
         img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
-        orb = cv2.ORB_create(nfeatures=100)
+        orb = cv2.ORB_create(nfeatures=500)
         keypoints, descriptors = orb.detectAndCompute(img, None)
         for i in range(len(keypoints)):
             orb_images[image]['orb'][i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
