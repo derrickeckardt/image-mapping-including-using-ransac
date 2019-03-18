@@ -141,7 +141,8 @@ def inversewarp(base_im,transform_matrix_inv, output_shape):
 #     for i in range(len(keypoints)):
 #             image[i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
 def match_images(image1, image2):
-    common_points = 0
+    k = 0
+    matches = {}
     if image1['name'] != image2['name']:# and image1 == 'part1-images-small/bigben_6.jpg':  # and image2 == 'part1-images-small/bigben_2.jpg'
         for i in image1['orb']:
             # initial top two matches.
@@ -149,13 +150,19 @@ def match_images(image1, image2):
                             2:{"distance":float('inf'),"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image1['orb'][i]['keypoints']}}
             for j in image2['orb']:
                 distance = cv2.norm(image1['orb'][i]['descriptors'], image2['orb'][j]['descriptors'], cv2.NORM_HAMMING)
-                if distance <= 150 and  distance <= best_matches[2]['distance']: # this threshold impacts speed...
-                    best_matches[2] = best_matches[1]
-                    best_matches[1] = {"distance":distance,"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image2['orb'][j]['keypoints']}
-            if best_matches[1]["distance"] != float('inf') and best_matches[2]['distance'] != float('inf'):
-                print(best_matches[1]['distance'],best_matches[2]['distance'] )
-            
-    return 1 #common_points
+                if distance <= 50:
+                    if distance <= best_matches[1]['distance']:# this threshold impacts speed...
+                        best_matches[2] = best_matches[1]
+                        best_matches[1] = {"distance":distance,"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image2['orb'][j]['keypoints']}
+                    elif distance <= best_matches[2]['distance']:
+                        best_matches[2] = {"distance":distance,"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image2['orb'][j]['keypoints']}
+            # if best_matches[1]["distance"] != float('inf') and best_matches[2]['distance'] != float('inf'):
+                # print(best_matches[1]['distance'],best_matches[2]['distance'] )
+            if best_matches[1]['distance'] != float('inf'):
+                matches[k] = best_matches[1]
+                k += 1
+    print(k, len(matches)   ) 
+    return k, matches
     
 def simple_refs(refs):
     x, y,xp, yp = {}, {}, {}, {}
@@ -381,21 +388,47 @@ def part3():
 
     # Load and create images, Find interest points for images, load keypoint descriptors
     img1 = cv2.imread(im1_file, cv2.IMREAD_GRAYSCALE)
-    orb1 = cv2.ORB_create(nfeatures=100)
+    orb1 = cv2.ORB_create(nfeatures=200)
     keypoints1, descriptors1 = orb1.detectAndCompute(img1, None)
     im1 = {"name":im1_file, "orb":{}}
     for i in range(len(keypoints1)):
         im1['orb'][i] = {'keypoints':keypoints1[i], 'descriptors':descriptors1[i]}
 
     img2 = cv2.imread(im2_file, cv2.IMREAD_GRAYSCALE)
-    orb2 = cv2.ORB_create(nfeatures=100)
+    orb2 = cv2.ORB_create(nfeatures=200)
     keypoints2, descriptors2 = orb2.detectAndCompute(img2, None)
     im2 = {"name":im2_file, "orb":{}}
     for i in range(len(keypoints2)):
         im2['orb'][i] = {'keypoints':keypoints2[i], 'descriptors':descriptors2[i]}
     
     # Perform matching on them
-    common_points = match_images(im1,im2)
+    common_points, matches = match_images(im1,im2)
+    
+    
+    matches_list = []
+    for m in range(common_points):
+        # print(matches[m]['keypoint1'].pt)
+        # print(matches[m]['keypoint2'].pt)
+        # keypoints1.extend(matches[m]['keypoint1'])
+        # keypoints2.extend(matches[m]['keypoint2'])
+        matches_list.append([matches[m]['keypoint1'], matches[m]['keypoint2']]) 
+
+    # display for testing
+    # based on testing code provide to me by Priyank Sharma, simplified and
+    # modified to work with my variable environment and datastructures
+    match_im = np.hstack((img1,img2))
+    
+    for p1,p2 in matches_list:
+        from_cord = (int(p1.pt[0]),int(p1.pt[1]))
+        to_cord = (img1.shape[1]+int(p2.pt[0]),int(p2.pt[1]))
+        cv2.line(match_im,from_cord,to_cord,(255,0,0),1)
+
+    cv2.imwrite("matching_test.jpg", match_im)
+    
+
+    # match_im = cv2.drawMatches(img1,keypoints1, img2,keypoints2, matches_list, None, flags=2)
+    # cv2.imwrite("matching_test.jpg",match_im)
+
     
     # Perform Ransac on the images
     
