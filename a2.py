@@ -265,6 +265,8 @@ def part1():
     
     print("Final Centroids:", sorted(centroids))
     pprint(groupings)
+    # print(common_points_matrix["part1-images/eiffel_18.jpg"]["part1-images/eiffel_19.jpg"])
+    # print(common_points_matrix)
     # pprint(common_points_matrix)
     print("Completed kmeans clustering of "+str(len(orb_images))+" into "+str(k)+" clusters in "+str(round(time.time() - starttime,3))+" seconds.")
     
