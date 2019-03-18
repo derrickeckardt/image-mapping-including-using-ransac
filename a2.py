@@ -144,12 +144,18 @@ def match_images(image1, image2):
     common_points = 0
     if image1['name'] != image2['name']:# and image1 == 'part1-images-small/bigben_6.jpg':  # and image2 == 'part1-images-small/bigben_2.jpg'
         for i in image1['orb']:
+            # initial top two matches.
+            best_matches = {1:{"distance":float('inf'),"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image1['orb'][i]['keypoints']},
+                            2:{"distance":float('inf'),"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image1['orb'][i]['keypoints']}}
             for j in image2['orb']:
                 distance = cv2.norm(image1['orb'][i]['descriptors'], image2['orb'][j]['descriptors'], cv2.NORM_HAMMING)
-                if distance <= 100:  # this threshold impacts speed...
-                    common_points += 1
-                    break
-    return common_points
+                if distance <= 150 and  distance <= best_matches[2]['distance']: # this threshold impacts speed...
+                    best_matches[2] = best_matches[1]
+                    best_matches[1] = {"distance":distance,"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image2['orb'][j]['keypoints']}
+            if best_matches[1]["distance"] != float('inf') and best_matches[2]['distance'] != float('inf'):
+                print(best_matches[1]['distance'],best_matches[2]['distance'] )
+            
+    return 1 #common_points
     
 def simple_refs(refs):
     x, y,xp, yp = {}, {}, {}, {}
