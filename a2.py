@@ -417,26 +417,12 @@ def part3():
     for y in range(height):
         for x in range(width):
             # output_im[y,x] = np.divide(np.add(img2[y,x],image1_on_2[y,x]),2.0)
-            output_im[y,x] = np.array([(img2[y,x][0] + image1_on_2[y,x][0])/2.0, (img2[y,x][1] + image1_on_2[y,x][1])/2.0, (img2[y,x][2] + image1_on_2[y,x][2])/2.0])
+            r = (float(img2[y,x][0]) + float(image1_on_2[y,x][0]))/2.0
+            g = (float(img2[y,x][1]) + float(image1_on_2[y,x][1]))/2.0
+            b = (float(img2[y,x][2]) + float(image1_on_2[y,x][2]))/2.0
 
-    
-    print("500,200")
-    print(img2[500,200])
-    print(image1_on_2[500,200])
-    print(output_im[500,200])
+            output_im[y,x] = np.array([r, g,b])
 
-    print("400,300")
-    print(img2[400,300])
-    print(image1_on_2[400,300])
-    print(output_im[400,300])
-
-
-    print("200,500")
-    print(img2[200,500])
-    print(image1_on_2[200,500])
-    print(output_im[200,500])
-
-    
     cv2.imwrite(output_im_file, output_im)
     
 if part == "part1":
