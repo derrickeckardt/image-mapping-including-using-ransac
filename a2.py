@@ -274,14 +274,19 @@ def ransac(matches_list):
              new_matches_list.append(matches_list[m])
 
     # print("matches_list items start",len(new_matches_list))
-
     # print("Completed Ransac in "+str(round(time.time() - starttime,5))+" seconds.")    
         
     return best_tmatrix, new_matches_list
 
-def print_output(centroids, output_file):
-    pass
-    
+def print_output(groupings, output_file):
+    output_txt= open(output_file,"w+")
+    print(groupings.items())
+    for key, values in groupings.items():
+        new_line = key.split("/")[1]
+        for value in values:
+            new_line += " " + value.split("/")[1] 
+        output_txt.write(new_line +"\n")
+    output_txt.close
 
 def part1():
     starttime = time.time()
@@ -370,6 +375,7 @@ def part1():
     print("Completed kmeans clustering of "+str(len(orb_images))+" into "+str(k)+" clusters in "+str(round(time.time() - starttime,3))+" seconds.")
     
     # Insert clustering output
+    print_output(groupings, output_file)
     print("Clusters can be viewed in '"+output_file+"'.  I hope you like my clusters!")
 
 def part2():

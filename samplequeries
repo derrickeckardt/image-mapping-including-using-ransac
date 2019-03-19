@@ -11,16 +11,10 @@ time ./a2.py part2 2 part2-images/book2.jpg part2-images/book1.jpg part2_2_outpu
 time ./a2.py part2 3 part2-images/book2.jpg part2-images/book1.jpg part2_3_output.jpg 141,131 318,256 480,159 534,372 493,630 316,670
 time ./a2.py part2 4 part2-images/book2.jpg part2-images/book1.jpg part2_4_output.jpg 141,131 318,256 480,159 534,372 493,630 316,670 64,601 73,473   
 
-
 time ./a2.py part3 part2-images/book2.jpg part2-images/book1.jpg part3_output.jpg
 time ./a2.py part3 part1-images/eiffel_19.jpg part1-images/eiffel_18.jpg part3_output.jpg
 time ./a2.py part3 part1-images/colosseum_4.jpg part1-images/colosseum_5.jpg part3_output.jpg
 time ./a2.py part3 part1-images/bigben_3.jpg part1-images/bigben_2.jpg part3_output.jpg                                                                          
 
-
 test lincoln:
 time ./a2.py part2 4 part2-images/book2.jpg part2-images/book1.jpg lincoln_output.jpg 141,131 318,256 480,159 534,372 493,630 316,670 64,601 73,473 
-
-
-141,131 318,256 480,159 534,372 493,630 316,670 64,601 73,473
-
