@@ -163,7 +163,7 @@ def match_images(image1, image2):
     # and then saved in as a dictionary via:
     #     for i in range(len(keypoints)):
     #             image[i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
-    k = 0
+    average_distance = 1000
     matches = []
     if image1['name'] != image2['name']:# and image1 == 'part1-images-small/bigben_6.jpg':  # and image2 == 'part1-images-small/bigben_2.jpg'
         for i in image1['orb']:
@@ -182,10 +182,15 @@ def match_images(image1, image2):
                 # print(best_matches[1]['distance'],best_matches[2]['distance'] )
             if best_matches[1]['distance'] != float('inf'):
                 matches.append([best_matches[1]['keypoint1'],best_matches[1]['keypoint2'],best_matches[1]['distance']])
-                k += 1
+
+        # using ransac to clean up points
         if len(matches) >= 4:
             best_tmatrix, matches = ransac(matches)
-    return k, matches
+        # using the average lowest weight for clustering
+        total_distance = sum([distance for kp1, kp2, distance in matches])
+        average_distance = total_distance / len(matches) if len(matches) > 0 else 1000
+            
+    return average_distance, matches
     
 # takes input reference pair points and uses x,y,xp,yp notion for readability.
 def simple_refs(refs):
@@ -304,9 +309,6 @@ def print_output(groupings, output_file):
         output_txt.write(new_line +"\n")
     output_txt.close
     
-def score_output():
-    pass
-
 def part1():
     starttime = time.time()
     k, output_file = int(sys.argv[2]),sys.argv[-1]
@@ -343,7 +345,10 @@ def part1():
     print("Completed loading all "+str(len(orb_images)) +" images with Non Maximal Suppression in "+str(round(time.time() - starttime,3))+" seconds.")
 
     # match the points
-    print("Beginning image matching.  Expected run time for this part is appoximately "+str(round((len(orb_images)*(len(orb_images)-1))/3,3))+" seconds.")
+    # note, originally called common_points_matrix because I was counting the common points, now
+    # i get an average_distance.  rather than accidnetly break code, left that variable name in place
+    # that matrix carries all the edge weights.
+    print("Beginning image matching.  Expected run time for this part is appoximately "+str(round((len(orb_images)*(len(orb_images)-1))/4,3))+" seconds.")
     starttime = time.time()
     common_points_matrix = {}
     for image1 in orb_images.keys():
@@ -367,11 +372,11 @@ def part1():
         for centroid in centroids:
             groupings[centroid] = []
         for image in list(input_images.values()):
-            max_edge = [0, ""]  # may need to reverse this if I do it by strength of match
+            max_edge = [float('inf'), ""] 
             for centroid in centroids:
                 if image not in centroids:
                     edge_score = common_points_matrix[centroid][image] + common_points_matrix[image][centroid]
-                    if edge_score >= max_edge[0]:
+                    if edge_score <= max_edge[0]:
                         max_edge = [edge_score, image, centroid]
             if image not in centroids:
                 groupings[max_edge[2]].extend([max_edge[1]])
@@ -380,10 +385,10 @@ def part1():
         centroids = []
         for centroid, images in groupings.items():
             group_images = images + [centroid]
-            max_node = [0,""]  # may need to reverse this if I do it by strength of match
+            max_node = [float('inf'),""]  # may need to reverse this if I do it by strength of match
             for image1 in group_images:
                 node_score = sum([common_points_matrix[image1][image2] + common_points_matrix[image2][image1] for image2 in group_images])
-                if node_score >= max_node[0]:
+                if node_score <= max_node[0]:
                     max_node = [node_score,image1]
             centroids.extend([max_node[1]])
         if sorted(old_centroids) == sorted(centroids):
