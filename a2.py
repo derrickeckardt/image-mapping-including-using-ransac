@@ -322,33 +322,33 @@ def part1():
     for key, image in input_images.items():
         orb_images[image] = {"name":image, "orb":{}}
         img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
-        orb = cv2.ORB_create(nfeatures=500)
+        orb = cv2.ORB_create(nfeatures=200)
         keypoints, descriptors = orb.detectAndCompute(img, None)
         for i in range(len(keypoints)):
             orb_images[image]['orb'][i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
         
-        # non-maximum suppression
-        nonmax, i = False, 0
-        while nonmax == False:
-            for j in range(i,len(orb_images[image]['orb'])):
-                if within_circle(orb_images[image]['orb'][i]['keypoints'],orb_images[image]['orb'][j]['keypoints']):
-                    if orb_images[image]['orb'][i]['keypoints'].response > orb_images[image]['orb'][j]['keypoints'].response:
-                        # remove j item
-                        orb_images[image]['orb'].pop(j)
-                    else:
-                        #remove i item and break loop
-                        orb_images[image]['orb'].pop(i)
-                        break
-            i += 1
-            if i > len(orb_images[image]['orb']):
-                nonmax = True
+        # # non-maximum suppression
+        # nonmax, i = False, 0
+        # while nonmax == False:
+        #     for j in range(i,len(orb_images[image]['orb'])):
+        #         if within_circle(orb_images[image]['orb'][i]['keypoints'],orb_images[image]['orb'][j]['keypoints']):
+        #             if orb_images[image]['orb'][i]['keypoints'].response > orb_images[image]['orb'][j]['keypoints'].response:
+        #                 # remove j item
+        #                 orb_images[image]['orb'].pop(j)
+        #             else:
+        #                 #remove i item and break loop
+        #                 orb_images[image]['orb'].pop(i)
+        #                 break
+        #     i += 1
+        #     if i > len(orb_images[image]['orb']):
+        #         nonmax = True
     print("Completed loading all "+str(len(orb_images)) +" images with Non Maximal Suppression in "+str(round(time.time() - starttime,3))+" seconds.")
 
     # match the points
     # note, originally called common_points_matrix because I was counting the common points, now
     # i get an average_distance.  rather than accidnetly break code, left that variable name in place
     # that matrix carries all the edge weights.
-    print("Beginning image matching.  Expected run time for this part is appoximately "+str(round((len(orb_images)*(len(orb_images)-1))/4,3))+" seconds.")
+    print("Beginning image matching.  Expected run time for this part is appoximately "+str(round((len(orb_images)*(len(orb_images)-1))/5,3))+" seconds.")
     starttime = time.time()
     common_points_matrix = {}
     for image1 in orb_images.keys():
