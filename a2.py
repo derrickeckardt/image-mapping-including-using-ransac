@@ -287,6 +287,9 @@ def print_output(groupings, output_file):
             new_line += " " + value.split("/")[1] 
         output_txt.write(new_line +"\n")
     output_txt.close
+    
+def score_output():
+    pass
 
 def part1():
     starttime = time.time()
