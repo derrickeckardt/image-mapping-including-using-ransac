@@ -544,7 +544,7 @@ def part3():
     img2 = cv2.imread(im2_file)
 
     # project one image onto another one
-    image1_on_2 = inversewarp(img1,tmatrix_inv, img1.shape)
+    image1_on_2 = inversewarp(img1,tmatrix_inv, img1.shape,[0,0])
 
     # merge the two images
     height,width,depth = image1_on_2.shape
