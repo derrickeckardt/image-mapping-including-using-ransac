@@ -74,7 +74,6 @@ def within_circle(keypoint1, keypoint2):
             return False
     else:
         return False
-# converts image into a dictionary, thought wouldbe more time efficient, but wasn't
 
 def make_im_dict(im):
     height,width,depth = im.shape
@@ -85,6 +84,10 @@ def make_im_dict(im):
             # print(j,i)
             im_dict[j][i] = im[j,i]
     return im_dict
+
+def merge(im1,im2):
+    pass
+
 
 # does bilineal interpopulation for inverse warping
 # return the pixel value
@@ -126,26 +129,18 @@ def inversewarp(base_im,transform_matrix_inv, output_shape):
 
     return output_im
 
-# used for finding the bounding box of the new image
-def forwardwarp_point(transform_matrix, x_o,y_o):
-    pixel = np.array([x_o, y_o, 1])
-    xyw_prime = np.matmul(transform_matrix,pixel)
-    xp_o, yp_o = xyw_prime[0] / xyw_prime[2], xyw_prime[1] / xyw_prime[2]
-    return xp_o, yp_o
-
-# matches keypoints
+# takes as input of an image as described by keypoints and descriptors that have
+# been placed in a dictorary, in the form:
+    # image[i] = {'keypoints': keypoints[i], 'descriptors':descriptors[i]}
+    # image["name"] = image (as string)
+# where keypoints, descriptors are generated from:
+    # img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+    # orb = cv2.ORB_create(nfeatures=1000)
+    # keypoints, descriptors = orb.detectAndCompute(img, None)
+# and then saved in as a dictionary via:
+#     for i in range(len(keypoints)):
+#             image[i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
 def match_images(image1, image2):
-    # takes as input of an image as described by keypoints and descriptors that have
-    # been placed in a dictorary, in the form:
-        # image[i] = {'keypoints': keypoints[i], 'descriptors':descriptors[i]}
-        # image["name"] = image (as string)
-    # where keypoints, descriptors are generated from:
-        # img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
-        # orb = cv2.ORB_create(nfeatures=1000)
-        # keypoints, descriptors = orb.detectAndCompute(img, None)
-    # and then saved in as a dictionary via:
-    #     for i in range(len(keypoints)):
-    #             image[i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
     k = 0
     matches = {}
     if image1['name'] != image2['name']:# and image1 == 'part1-images-small/bigben_6.jpg':  # and image2 == 'part1-images-small/bigben_2.jpg'
@@ -166,9 +161,9 @@ def match_images(image1, image2):
             if best_matches[1]['distance'] != float('inf'):
                 matches[k] = best_matches[1]
                 k += 1
+    print(k, len(matches)   ) 
     return k, matches
     
-# takes input reference pair points and uses x,y,xp,yp notion for readability.
 def simple_refs(refs):
     x, y,xp, yp = {}, {}, {}, {}
     i = 1
@@ -197,77 +192,6 @@ def four_point_tranform_matrix(x,y,xp,yp):
     tmatrix = np.reshape(np.append(tmatrix,[1]),(3,3))
 
     return tmatrix
-
-# produces image showing how points match-up.  For testing purposes.
-def matching_test_image(matches_list,img1,img2):
-    # based onmatch  testing code provide to me by classmate Priyank Sharma, 
-    # simplified and modified to work with my variable environment and data structures
-    match_im = np.hstack((img1,img2))
-    for p1,p2 in matches_list:
-        from_cord = (int(p1.pt[0]),int(p1.pt[1]))
-        to_cord = (img1.shape[1]+int(p2.pt[0]),int(p2.pt[1]))
-        cv2.line(match_im,from_cord,to_cord,(255,0,0),1)
-    return match_im
-
-def get_points_from_matches(sample):
-    return [[[pt1.pt[0],pt1.pt[1]],[pt2.pt[0],pt2.pt[1]]] for pt1,pt2 in sample]
-        
-
-def inlier_check(threshold, tmatrix,x_o,y_o,xp_o,yp_o):
-    xp_c, yp_c = forwardwarp_point(tmatrix, x_o,y_o)
-    if abs(xp_c -xp_o) <= threshold and abs(yp_c-yp_o) <= threshold:
-        return True
-    else:
-        return False
-
-# perform ransac in order to find transformation matrix
-def ransac(matches_list):
-    starttime = time.time()
-    max_iterations = 500
-    threshold = 5 #pixels
-    max_inliers = 0
-
-    for i in range(max_iterations):
-        #initial conditions
-        sample = random.sample(matches_list, 4)
-        x, y, xp, yp = simple_refs(get_points_from_matches(sample))
-        tmatrix = four_point_tranform_matrix(x,y,xp,yp)
-    
-        # count inliers
-        inliers,outliers = 0,0
-        for pt1, pt2 in matches_list:
-            if inlier_check(threshold,tmatrix, pt1.pt[0],pt1.pt[1],pt2.pt[0],pt2.pt[1]):
-                inliers += 1
-            else:
-                outliers += 1
-
-        print("run,",i,"inliers: ",inliers, ", outliers ", outliers)
-
-        
-        if inliers > max_inliers:
-            max_inliers = inliers
-            best_tmatrix = tmatrix
-            
-        # if inliers > outliers:
-        #     break
-        
-        
-        
-    print("Completed Ransac in "+str(round(time.time() - starttime,5))+" seconds.")    
-        
-    
-    
-    # #Placeholder refs until I get RANSAC done
-    # refs = [[[141,131],[318,256]],[[480,159],[534,372]],[[493,630],[316,670]],[[64,601],[73,473]]]
-
-    # # Calculate the transformation matrix from four points from ransac
-    # x, y, xp, yp = simple_refs(refs)
-    
-    # # transform one image to look the other
-    # # calculate transform matrix, and then its inverse
-    # tmatrix = four_point_tranform_matrix(x,y,xp,yp)
-
-    return best_tmatrix, matches_list
 
 def part1():
     starttime = time.time()
@@ -479,17 +403,45 @@ def part3():
     
     # Perform matching on them
     common_points, matches = match_images(im1,im2)
-
-    # Testing matches, commented out for final version
+    
+    
     matches_list = []
     for m in range(common_points):
+        # print(matches[m]['keypoint1'].pt)
+        # print(matches[m]['keypoint2'].pt)
+        # keypoints1.extend(matches[m]['keypoint1'])
+        # keypoints2.extend(matches[m]['keypoint2'])
         matches_list.append([matches[m]['keypoint1'], matches[m]['keypoint2']]) 
-    match_im = matching_test_image(matches_list, img1,img2)
-    cv2.imwrite("matching_test.jpg", match_im)
 
-    # Perform Ransac on the images
-    tmatrix, matches_list = ransac(matches_list)
+    # display for testing
+    # based on testing code provide to me by Priyank Sharma, simplified and
+    # modified to work with my variable environment and datastructures
+    match_im = np.hstack((img1,img2))
     
+    for p1,p2 in matches_list:
+        from_cord = (int(p1.pt[0]),int(p1.pt[1]))
+        to_cord = (img1.shape[1]+int(p2.pt[0]),int(p2.pt[1]))
+        cv2.line(match_im,from_cord,to_cord,(255,0,0),1)
+
+    cv2.imwrite("matching_test.jpg", match_im)
+    
+
+    # match_im = cv2.drawMatches(img1,keypoints1, img2,keypoints2, matches_list, None, flags=2)
+    # cv2.imwrite("matching_test.jpg",match_im)
+
+    
+    # Perform Ransac on the images
+    
+
+    #Placeholder refs until I get RANSAC done
+    refs = [[[141,131],[318,256]],[[480,159],[534,372]],[[493,630],[316,670]],[[64,601],[73,473]]]
+
+    # Calculate the transformation matrix from four points from ransac
+    x, y, xp, yp = simple_refs(refs)
+    
+    # transform one image to look the other
+    # calculate transform matrix, and then its inverse
+    tmatrix = four_point_tranform_matrix(x,y,xp,yp)
     tmatrix_inv = np.linalg.inv(tmatrix)
     
     #reload images as color images now
