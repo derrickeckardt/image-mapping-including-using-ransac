@@ -61,6 +61,7 @@ import imageio
 from math import atan, cos, sin
 from pprint import pprint
 import profile
+# from numpy.linalg.LinAlgError import LinAlgError
 
 part = sys.argv[1]
 
@@ -147,7 +148,7 @@ def match_images(image1, image2):
     #     for i in range(len(keypoints)):
     #             image[i] = {'keypoints':keypoints[i], 'descriptors':descriptors[i]}
     k = 0
-    matches = {}
+    matches = []
     if image1['name'] != image2['name']:# and image1 == 'part1-images-small/bigben_6.jpg':  # and image2 == 'part1-images-small/bigben_2.jpg'
         for i in image1['orb']:
             # initial top two matches.
@@ -155,7 +156,7 @@ def match_images(image1, image2):
                             2:{"distance":float('inf'),"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image1['orb'][i]['keypoints']}}
             for j in image2['orb']:
                 distance = cv2.norm(image1['orb'][i]['descriptors'], image2['orb'][j]['descriptors'], cv2.NORM_HAMMING)
-                if distance <= 50:
+                if distance <= 60:
                     if distance <= best_matches[1]['distance']:# this threshold impacts speed...
                         best_matches[2] = best_matches[1]
                         best_matches[1] = {"distance":distance,"keypoint1":image1['orb'][i]['keypoints'],"keypoint2":image2['orb'][j]['keypoints']}
@@ -164,8 +165,10 @@ def match_images(image1, image2):
             # if best_matches[1]["distance"] != float('inf') and best_matches[2]['distance'] != float('inf'):
                 # print(best_matches[1]['distance'],best_matches[2]['distance'] )
             if best_matches[1]['distance'] != float('inf'):
-                matches[k] = best_matches[1]
+                matches.append([best_matches[1]['keypoint1'],best_matches[1]['keypoint2'],best_matches[1]['distance']])
                 k += 1
+        if len(matches) >= 4:
+            best_tmatrix, matches = ransac(matches)
     return k, matches
     
 # takes input reference pair points and uses x,y,xp,yp notion for readability.
@@ -178,16 +181,21 @@ def simple_refs(refs):
         i += 1
     return x, y, xp, yp
 
-def four_point_tranform_matrix(x,y,xp,yp):
+def pointmatrix_assmeble(x,y,xp,yp):
+    # assemble 4pt matrix and determines if it is invertible
     pointmatrix = np.array([[x[1],y[1],1,0,0,0,-x[1]*xp[1],-y[1]*xp[1]],
-                        [0,0,0,x[1],y[1],1,-x[1]*yp[1],-y[1]*yp[1]],
-                        [x[2],y[2],1,0,0,0,-x[2]*xp[2],-y[2]*xp[2]],
-                        [0,0,0,x[2],y[2],1,-x[2]*yp[2],-y[2]*yp[2]],
-                        [x[3],y[3],1,0,0,0,-x[3]*xp[3],-y[3]*xp[3]],
-                        [0,0,0,x[3],y[3],1,-x[3]*yp[3],-y[3]*yp[3]],
-                        [x[4],y[4],1,0,0,0,-x[4]*xp[4],-y[4]*xp[4]],
-                        [0,0,0,x[4],y[4],1,-x[4]*yp[4],-y[4]*yp[4]]
-                        ])
+                    [0,0,0,x[1],y[1],1,-x[1]*yp[1],-y[1]*yp[1]],
+                    [x[2],y[2],1,0,0,0,-x[2]*xp[2],-y[2]*xp[2]],
+                    [0,0,0,x[2],y[2],1,-x[2]*yp[2],-y[2]*yp[2]],
+                    [x[3],y[3],1,0,0,0,-x[3]*xp[3],-y[3]*xp[3]],
+                    [0,0,0,x[3],y[3],1,-x[3]*yp[3],-y[3]*yp[3]],
+                    [x[4],y[4],1,0,0,0,-x[4]*xp[4],-y[4]*xp[4]],
+                    [0,0,0,x[4],y[4],1,-x[4]*yp[4],-y[4]*yp[4]]
+                    ])
+    return pointmatrix
+    
+def four_point_tranform_matrix(x,y,xp,yp):
+    pointmatrix = pointmatrix_assmeble(x,y,xp,yp)
 
     pointmatrix_inv = np.linalg.inv(pointmatrix)
     primematrix = np.array([xp[1],yp[1],xp[2],yp[2],xp[3],yp[3],xp[4],yp[4]])
@@ -203,15 +211,14 @@ def matching_test_image(matches_list,img1,img2):
     # based onmatch  testing code provide to me by classmate Priyank Sharma, 
     # simplified and modified to work with my variable environment and data structures
     match_im = np.hstack((img1,img2))
-    for p1,p2 in matches_list:
+    for p1,p2,distance in matches_list:
         from_cord = (int(p1.pt[0]),int(p1.pt[1]))
         to_cord = (img1.shape[1]+int(p2.pt[0]),int(p2.pt[1]))
         cv2.line(match_im,from_cord,to_cord,(255,0,0),1)
     return match_im
 
 def get_points_from_matches(sample):
-    return [[[pt1.pt[0],pt1.pt[1]],[pt2.pt[0],pt2.pt[1]]] for pt1,pt2 in sample]
-        
+    return [[[pt1.pt[0],pt1.pt[1]],[pt2.pt[0],pt2.pt[1]]] for pt1,pt2,distance in sample]
 
 def inlier_check(threshold, tmatrix,x_o,y_o,xp_o,yp_o):
     xp_c, yp_c = forwardwarp_point(tmatrix, x_o,y_o)
@@ -223,40 +230,35 @@ def inlier_check(threshold, tmatrix,x_o,y_o,xp_o,yp_o):
 # perform ransac in order to find transformation matrix
 def ransac(matches_list):
     starttime = time.time()
+    # print("matches_list items start",len(matches_list))
     max_iterations = 500
-    threshold = 5 #pixels
+    threshold = 3 #pixels  # balance game between this and how many features and distance threshold
     max_inliers = 0
+    best_tmatrix = np.identity(3)
 
     for i in range(max_iterations):
         #initial conditions
         sample = random.sample(matches_list, 4)
         x, y, xp, yp = simple_refs(get_points_from_matches(sample))
+        # https://stackoverflow.com/questions/13249108/efficient-pythonic-check-for-singular-matrix
+        try:
+            np.linalg.inv(pointmatrix_assmeble(x,y,xp,yp))
+        except:
+            continue
         tmatrix = four_point_tranform_matrix(x,y,xp,yp)
     
         # count inliers
         inliers,outliers = 0,0
-        for pt1, pt2 in matches_list:
+        for pt1, pt2, distance in matches_list:
             if inlier_check(threshold,tmatrix, pt1.pt[0],pt1.pt[1],pt2.pt[0],pt2.pt[1]):
                 inliers += 1
             else:
                 outliers += 1
 
-        print("run,",i,"inliers: ",inliers, ", outliers ", outliers)
-
-        
         if inliers > max_inliers:
             max_inliers = inliers
             best_tmatrix = tmatrix
             
-        # if inliers > outliers:
-        #     break
-        
-        
-        
-    print("Completed Ransac in "+str(round(time.time() - starttime,5))+" seconds.")    
-        
-    
-    
     # #Placeholder refs until I get RANSAC done
     # refs = [[[141,131],[318,256]],[[480,159],[534,372]],[[493,630],[316,670]],[[64,601],[73,473]]]
 
@@ -266,8 +268,20 @@ def ransac(matches_list):
     # # transform one image to look the other
     # # calculate transform matrix, and then its inverse
     # tmatrix = four_point_tranform_matrix(x,y,xp,yp)
+    new_matches_list = []
+    for (pt1,pt2,distance),m in zip(matches_list, range(len(matches_list))):
+         if inlier_check(threshold,best_tmatrix, pt1.pt[0],pt1.pt[1],pt2.pt[0],pt2.pt[1]) == True:
+             new_matches_list.append(matches_list[m])
 
-    return best_tmatrix, matches_list
+    # print("matches_list items start",len(new_matches_list))
+
+    # print("Completed Ransac in "+str(round(time.time() - starttime,5))+" seconds.")    
+        
+    return best_tmatrix, new_matches_list
+
+def print_output(centroids, output_file):
+    pass
+    
 
 def part1():
     starttime = time.time()
@@ -311,7 +325,7 @@ def part1():
     for image1 in orb_images.keys():
         common_points_matrix[image1] = {}
         for image2 in orb_images.keys():
-            common_points_matrix[image1][image2] = match_images(orb_images[image1],orb_images[image2])
+            common_points_matrix[image1][image2], matches_list = match_images(orb_images[image1],orb_images[image2])
     print("Completed matching all "+str(len(orb_images)*(len(orb_images)-1)) +" pairs of images in "+str(round(time.time() - starttime,3))+" seconds.")
 
     # kMeans grouping -- I select k random images as the centroids, then decide 
@@ -351,16 +365,11 @@ def part1():
         if sorted(old_centroids) == sorted(centroids):
             break
     
-    
     print("Final Centroids:", sorted(centroids))
     pprint(groupings)
-    # print(common_points_matrix["part1-images/eiffel_18.jpg"]["part1-images/eiffel_19.jpg"])
-    # print(common_points_matrix)
-    # pprint(common_points_matrix)
     print("Completed kmeans clustering of "+str(len(orb_images))+" into "+str(k)+" clusters in "+str(round(time.time() - starttime,3))+" seconds.")
     
     # Insert clustering output
-    
     print("Clusters can be viewed in '"+output_file+"'.  I hope you like my clusters!")
 
 def part2():
@@ -478,17 +487,22 @@ def part3():
         im2['orb'][i] = {'keypoints':keypoints2[i], 'descriptors':descriptors2[i]}
     
     # Perform matching on them
-    common_points, matches = match_images(im1,im2)
+    common_points, matches_list = match_images(im1,im2)
 
     # Testing matches, commented out for final version
-    matches_list = []
-    for m in range(common_points):
-        matches_list.append([matches[m]['keypoint1'], matches[m]['keypoint2']]) 
+    # matches_list = []
+    # for m in range(common_points):
+    #     matches_list.append([matches[m]['keypoint1'], matches[m]['keypoint2']]) 
     match_im = matching_test_image(matches_list, img1,img2)
     cv2.imwrite("matching_test.jpg", match_im)
 
     # Perform Ransac on the images
     tmatrix, matches_list = ransac(matches_list)
+    
+    # Compare output to previous photo
+    match_im = matching_test_image(matches_list, img1,img2)
+    cv2.imwrite("matching_test_ransac.jpg", match_im)
+
     
     tmatrix_inv = np.linalg.inv(tmatrix)
     
@@ -499,7 +513,6 @@ def part3():
     # project one image onto another one
     image1_on_2 = inversewarp(img1,tmatrix_inv, img1.shape)
 
-    
     # merge the two images
     height,width,depth = image1_on_2.shape
     output_im = np.zeros((height,width,depth), np.uint8) 
