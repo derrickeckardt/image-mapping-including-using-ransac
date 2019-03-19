@@ -75,8 +75,8 @@ def within_circle(keypoint1, keypoint2):
             return False
     else:
         return False
-# converts image into a dictionary, thought wouldbe more time efficient, but wasn't
 
+# converts image into a dictionary, thought wouldbe more time efficient, but wasn't
 def make_im_dict(im):
     height,width,depth = im.shape
     im_dict ={}
@@ -87,8 +87,7 @@ def make_im_dict(im):
             im_dict[j][i] = im[j,i]
     return im_dict
 
-# does bilineal interpopulation for inverse warping
-# return the pixel value
+# does bilineal interpopulation for inverse warping, return the pixel value
 def bilineal(im,x,y):
     dx = x-int(x)
     dy = y-int(y)
@@ -109,14 +108,31 @@ def bilineal(im,x,y):
     # bilinial(warp_im,230.99,500.99)       
     # # print(230.99,500.99)
 
-def inversewarp(base_im,transform_matrix_inv, output_shape):
+# gets size for transformed image]
+def get_shape(base_im, tmatrix):
+    height, width, depth = base_im.shape
+    corners = [[0,0], [width-1,0],[0,height-1],[width-1,height-1]]
+    xs, ys = [],[]
+    for x,y in corners:
+        xp, yp = forwardwarp_point(tmatrix, x,y)
+        xs.append(int(round(xp)))
+        ys.append(int(round(yp)))
+        print(xp,yp)
+    new_width, new_height = max(xs)-min(xs), max(ys) - min(ys)
+    offset_width,offset_height = min(xs), min(ys)
+
+    return (new_height, new_width, depth),[offset_width,offset_height]
+
+# performs inverse warping
+def inversewarp(base_im,transform_matrix_inv, output_shape, offsets):
+    
     height, width, depth = output_shape
     base_height, base_width, base_depth = base_im.shape
     output_im = np.zeros((height,width,depth), np.uint8)  # https://stackoverflow.com/questions/12881926/create-a-new-rgb-opencv-image-using-python
 
     for x in range(width):
         for y in range(height):
-            pixel = np.array([x, y, 1])
+            pixel = np.array([x+offsets[0], y+offsets[1], 1])
             xyw = np.matmul(transform_matrix_inv,pixel)
             x_o, y_o = xyw[0] / xyw[2], xyw[1] / xyw[2]
             if x_o >= 0 and x_o <= base_width-1 and y_o >= 0 and y_o <= base_height-1:
@@ -411,10 +427,12 @@ def part2():
         translation_matrix_inv = np.linalg.inv(translation_matrix)
         
         # Create shape for output image
-        translation_shape = (base_im.shape[0] + dy, base_im.shape[1] + dx, base_im.shape[2])
+        # translation_shape = (base_im.shape[0] + dy, base_im.shape[1] + dx, base_im.shape[2])
+        translation_shape, offsets = get_shape(base_im, translation_matrix)
+        print(translation_shape)
         
         # create output image
-        output_im = inversewarp(base_im,translation_matrix_inv, translation_shape)
+        output_im = inversewarp(base_im,translation_matrix_inv, translation_shape, offsets)
         cv2.imwrite(output_im_file, output_im)
         print("Image '"+base_im_file+"' has been translated and saved as '"+output_im_file+"'.  That was a nice move." )
 
@@ -433,9 +451,11 @@ def part2():
  
          # Create shape for output image
         # translation_shape = (base_im.shape[0] + dy, base_im.shape[1] + dx, base_im.shape[2])
+        translation_shape, offsets = get_shape(base_im, translation_matrix)
+        print(translation_shape)
         
         # create output image
-        output_im = inversewarp(base_im,translation_matrix_inv, base_im.shape)  #translation_shape
+        output_im = inversewarp(base_im,translation_matrix_inv, translation_shape,offsets)  #translation_shape
         cv2.imwrite(output_im_file, output_im)
         print("Image '"+base_im_file+"' has made a rigid transformation and is saved at '"+output_im_file+"'.  Nice spinning, DJ." )
        
@@ -459,7 +479,9 @@ def part2():
         # take the inverse of the affine matrix
         amatrix_inv = np.linalg.inv(amatrix)
         
-        output_im = inversewarp(base_im,amatrix_inv, base_im.shape)
+        translation_shape, offsets = get_shape(base_im,amatrix)
+        
+        output_im = inversewarp(base_im,amatrix_inv, base_im.shape, offsets)
         cv2.imwrite(output_im_file, output_im)
         print("Image '"+base_im_file+"' has made an affice transformation and saved as '"+output_im_file+"'.  That was tripy" )
 
@@ -468,7 +490,9 @@ def part2():
         tmatrix = four_point_tranform_matrix(x,y,xp,yp)
         tmatrix_inv = np.linalg.inv(tmatrix)
 
-        output_im = inversewarp(base_im,tmatrix_inv, base_im.shape)
+        translation_shape, offsets = get_shape(base_im, tmatrix)
+
+        output_im = inversewarp(base_im,tmatrix_inv, translation_shape, offsets)
         cv2.imwrite(output_im_file, output_im)
         print("Image '"+base_im_file+"' has been translated and saved as '"+output_im_file+"'.  I feel bent out of shape." )
 
