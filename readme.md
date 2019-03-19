@@ -5,8 +5,7 @@ Completed by Derrick Eckardt on March 19, 2019.  Please direct any questions to 
 The assignment prompt can be found at [Assignment 2 Prompt](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/a2-sp2019.pdf)
 
 # General Comments
-I think the coolest thing 
-
+I think the coolest thing about this assignment, is that it becomes really easy to understand how our a lot of our every day technology actually works.  By the end, I've taken two different images of the same thing, summed them together, and got some startinly cool results!  Most interesting, was the cyclical nature of this assignment.  After I did part 1, and part 2, I was able to use things I learned or coded in part 3 to go back and improve part 1 and part 2. I have a lot else to say on specific points, so let's get on with the show.
 
 # Part 1 - Clustering
 Wow. There were so many tiny decisions to make.  The biggest thing is having to deciding what to optimize for.  There was way more 'expert' knowledge that was needed in order to provide decent results.
@@ -28,9 +27,7 @@ and for second best match:
 
 As you can see, the second best match gave no better matches, and actually got rid of the some of the good ones.
 
-When all else fails, read the documentation!  In the CV2 documentation, I saw that it ranks the matches and provides the strongest candidates.  Meaning, the more points you ask for, the worse they likely are.
-
-So, I dropped to just 100 features, and I actually got some really interesting results.  First, look at this comparison of two colosseum images:
+When all else fails, read the documentation!  In the CV2 documentation, I saw that it ranks the matches and provides the strongest candidates.  Meaning, the more points you ask for, the worse they likely are.  So, I dropped to just 100 features, and I actually got some really interesting results.  First, look at this comparison of two colosseum images:
 
 ![colosseum few matches](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/matching_test_colosseum_best_match.jpg)
 
@@ -38,7 +35,7 @@ There were only about twelve matches, but they are dead on.  Then, when I looked
 
 ![big ben few matches](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/matching_test_bigben_best_match_no_nms.jpg)
 
-It matched the faces of the clock!  At this point, I decided I would actually focus on just a few points, ignore NMS and use those for determing what my matches would be.  I did bump it up to 200, because I decided it would make sense to use RANSAC here, and that would cause me to lose some points.
+It matched the faces of the clock!  At this point, I decided I would actually focus on just a few points, ignore NMS and use just those for determing what my matches would be.  I did bump it up to 200, because I decided it would make sense to use RANSAC here (after getting it working in part 3), and that would cause me to lose some points.
 
 ## Implementing RANSAC - Stealing from the Future
 After I did Part 3, I realized that I could use my RANSAC algorithm from Part 3, to clean-up my matches in Part 1.  So, skip ahead to Part 3 if you want to know how I implemented RANSAC.  Here, you can see see the results of my eiffel tower matches, starting with 200 feaures, no NMS, and then without RANSAC implemented:
@@ -54,16 +51,24 @@ All the bad matches are gone.  RANSAC filtered them out. I can only visually see
 ## How should I value connections?
 Initially, I went with a very simple (dumb?) heurestic to see how two images were related, and that was the number of connections.  In fact, you'll see my dictionary of edge weights referred to as "common\_points\_matrix".  It was a terribly metric, but was good for doing quick testing to see if my algorithm would work.  The results were not any better than randomly placing them into different centroids.  In fact, it wasn't even that good at times, because it would tend to almost all of the images in one clusters, and then leave the other clusters with just two or three images, and sometimes just the centroid.
 
-After I implemented my decisions to use fewer features, not use NMS, and then filter with RANSAC, I'm confident that most of my matches will be high quality matches.  At the point, I changed my metric to average_distance.   Since in some cases I only had a few connections, but they were all high quality matches. I would want them to stand out.  So, I summed all my distances for my matches and then divided by the number of matches.  For images with no matches, I default set it to 1000 to ensure that those images are never actually considered a match.
-
-
+After I implemented my decisions to use fewer features, not use NMS, and then filter with RANSAC, I'm confident that most of my matches will be high quality matches.  At the point, I changed my metric to average_distance.   Since in some cases I only had a few connections, but they were all high quality matches. I would want them to stand out.  So, I summed all my distances for my matches and then divided by the number of matches.  For images with no matches, I default set it to 1000 to ensure that those images are never actually considered a strong match.
 
 ## How should I cluster?
-
+In order to do the clustering, I used k-means clustering, as suggested in the assignment prompt.  To be honest, I was entirely crazy about it, because even though my centroids could change, I never saw them adjust more than a couple of runs, and what those initial centroids were impacted the results significantly.  The biggest issue I had was that results tended to clump together.  If I was grading this, I would recommend running each program several times in order to average out the clustering results for a ballpark accuracy. 
 
 ## Results
+Most surprising to me, is that I seemed to get results around 80%.  Which seemed really high to me.  However, the way we are measuring, tends to favor true negatives.  If images end up more or less evenly distributed across the different clusters, you will get about 80% of them correct.  That's just a function of the fact that an image can only have 8 to 9 true positives, while it can have about 80 true negatives.  If it is in a  group of only about 10 to 15, that's only 14 fewer True Positives. So, if we don't get a huge clump in one cluster, then the accuracy will be in the ballpark of 80 percent.  For example, if we randonly placed the 93 images into a 10 groups, that would end up with a decent accuracy.
 
 ## Recommendations for Improving Part 1
+
+### Different Clustering Techniques
+I used k-means for my clustering.  The biggest disadvantage of k-means is that a lot depends on the initial centroids.  You data could get really out of whack if it was given particularly odd centroids, or all from one class. If given more time, I think implementing something like [Single-linkage clustering](https://en.wikipedia.org/wiki/Single-linkage_clustering) would be better, as it gets around the issue of the initial centroids. There are a dozen different ways probably to do it, and given enough time, I would test them all, and would look at ensemble methods of them,
+
+### Different heurestic for connections
+Similarily, I don't know if average distance is the best measurement.  Perhaps, it's the probability that something is a corner?  There are probbly countless ways to measure their connection. I would definitely look at different factors in the future for measuring them.
+
+### Better Accuracy Method
+The method implemented for accuracy has a strong bias to True Negatives, and favors just about any system that results in well distributed groups. 
 
 # Part 2 - Transformation
 
