@@ -395,7 +395,7 @@ def part1():
             break
     
     print("Final Centroids:", sorted(centroids))
-    pprint(groupings)
+    # pprint(groupings)
     print("Completed kmeans clustering of "+str(len(orb_images))+" into "+str(k)+" clusters in "+str(round(time.time() - starttime,3))+" seconds.")
     
     # Insert clustering output

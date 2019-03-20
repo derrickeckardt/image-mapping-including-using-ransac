@@ -84,7 +84,7 @@ into this image:
 
 That was a good introduction into how to do it.  Then, I worked on my book warping, should be.  Instead of starting at case 1, I actually ended up working backwards, and that worked out alright.
 
-Honestly, I didn't have too many tough decisions to make here since how to do it since it was outlined fairly well in the assignment prompt.  I do have a few things to say, but they are not relevant.
+Honestly, I didn't have too many tough decisions to make here since how to do it was outlined fairly well in the assignment prompt.  I do have a few things to say, but the most relevant one is what size should my output image be, as it would creep up time and again.
 
 ## What size should my output image be?
 This was something that early on, I thought would be straightforward, which like most items here, turned out to have some intricarcies.  Depending on the transform matrix applied, particularly for Rigid or Affine transformations, I would see my image get cut-off on the screen.
@@ -96,10 +96,11 @@ However, when I implemented get_shape, what was lost was the fact that in compar
 Ultiamtely, as a design decision, I decided to go with the original size of the image for cases, 2,3, and 4, so you could best see the difference in the transformation.  For case 1, I changed the shape so that the translated portion would appear black.  I left the function and offsets in place to improve on this in the future.
 
 ## Results
-This was pretty cool, when I was able to get the two book images to combine.
-![combined book - Tada!](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part2_4_output.jpg)
+This was pretty cool, when I was able to get the two book images to rotate as it was meant to be rotated.
 
-If you flip between the book1 image image and the new image, the book in the middle does not move.  What is interesting is that the stuff around it does, because those are items that you can't shift, such as a shadow.
+![rotated book - Tada!](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part2_4_output.jpg)
+
+If you flip between the book1 image and the new image, the book in the middle does not move.  What is interesting is that the stuff around it does, because those are items that you can't shift, such as a shadow.
 
 ## Recommendations for Improving Part 2
 Here are some thoughts on how I could improve this part of my program.
@@ -114,20 +115,31 @@ I implemented almost no steps to make sure that the input points would not resul
 I cringe when I look at how the code is structured in part2().  However, with that part of the program only taking 10 seconds to run, there is little incentive to refactor the code for time.  It could be made clearer for readability.  However, as it is now, I think it makes it easier to compare the different types on matrices needed to perform the different kinds of transformations.
 
 # Part 3 - Automatic image matching and transformations
-This was by far the most interesting part where I combined elements from Part 1's image matching with Part2's transformation.
+This was by far the most interesting part where I combined elements from Part 1's image matching with Part2's transformation, and then being able to merge them into one photo
 
 ## RANSAC
-RANSAC was the means I used in order to find the transformation matrix
+RANSAC was the means I used in order to find the transformation matrix.  I started with the same process I had in part one to find matches.  Then, those matches were fed into the RANSAC function, which would give me the transformation matrix, and a revised list of matches that are inliers for that transformation.
 
-I choose to do 500 iterations. Which is most cases, might be excessive, but not all of them.
+First, I set some initial conditions.  The default for a transformation matrix would be the identity function.  This would only ever be used if every single iteration was found to be singular.
+
+More importantly, I set my pixel threshold to be just three pixels.  This comes into play with counting inliers.   I would determine my inliers by picking four matches at random, and compute the transform matrix.  Then, I applied the transform matrix to the x,y in every match.  Which produced an x'o,y'o.  If those x'o,y'o were within three pixels in of the x',y' that were in the calculated matches, then that match was considered an inlier.  Otherwise, it was an outlier.
+
+I kept track of how many inliers each matrix had, and kept the highest number of inliers as I repeated this process. I choose to do 500 iterations. Which is most cases, might be excessive, but not all of them.  Since, I was picking 4 points at a random.  For just 20 points, that would mean 116280 different combinations.  Way more than I could test in a reasonable amount of time.  Since RANSAC only works if the majority are inliers, than it meant that I had a pretty good chance of landing on an inlier heavy matrix.  I found 500 to work almost all the time, if an image would be matched up.  It took only about a quarter of second for the harder cases.
+
+After 500 iterations, I passed the matrix and a revised matches list back to the program.  Earlier, I highlighted the before and after for the eiffel tower.
 
 ## Results
 I think it's interesting that there are definitely still other items that would have to be corrected for, such as the fact that in one image, the table seems to be much larger than the other ones, so you end up with that table-in-table effect.
 
 ## Recommendations for Improving Part 3
 
+### Image size
+As I mentioned earlier, trying to get the right size of the image left a few things in limbo.  And depending on which two images were being merged, there could have been some edges that get cut off.
+
 
 # Errata
 I learned so much about python and numpy data structures.  My favorite error is when I was trying to merge the images and average out the results.   As it turns out, if you attempt to add two 8-bit numpy integers, you get non-sensical answers, which result in merged images like the following:
+
+![oops](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part3_book_test_bad_colors.jpg)
 
 
