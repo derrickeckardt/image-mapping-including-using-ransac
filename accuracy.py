@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-from pprint import pprint;
+#
+# To run:
+#    ./accuracy.py output_file.txt
+
 import sys
 from collections import Counter
 
@@ -25,4 +28,4 @@ for group in groups:
         TP += value * (value - 1)
         TN += value* (total_images - all_images[key] - (len(group) - value))
 
-print(round((TP+TN)/(0.01*total_images*(total_images-1)),2))
+print("Accuracy of",round((TP+TN)/(0.01*total_images*(total_images-1)),2),"%")

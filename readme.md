@@ -7,7 +7,7 @@ The assignment prompt can be found at [Assignment 2 Prompt](https://github.iu.ed
 # General Comments
 I think the coolest thing about this assignment, is that it becomes really easy to understand how our a lot of our every day technology actually works.  By the end, I've taken two different images of the same thing, summed them together, and got some startinly cool results!  Most interesting, was the cyclical nature of this assignment.  After I did part 1, and part 2, I was able to use things I learned or coded in part 3 to go back and improve part 1 and part 2. I have a lot else to say on specific points, so let's get on with the show.
 
-# Part 1 - Clustering
+# Part 1 - Image matching and clustering
 Wow. There were so many tiny decisions to make.  The biggest thing is having to deciding what to optimize for.  There was way more 'expert' knowledge that was needed in order to provide decent results.
 
 ## How many matches, first or second best, and not using Non Maximal Suppression
@@ -57,7 +57,7 @@ After I implemented my decisions to use fewer features, not use NMS, and then fi
 In order to do the clustering, I used k-means clustering, as suggested in the assignment prompt.  To be honest, I was entirely crazy about it, because even though my centroids could change, I never saw them adjust more than a couple of runs, and what those initial centroids were impacted the results significantly.  The biggest issue I had was that results tended to clump together.  If I was grading this, I would recommend running each program several times in order to average out the clustering results for a ballpark accuracy. 
 
 ## Results
-Most surprising to me, is that I seemed to get results around 80%.  Which seemed really high to me.  However, the way we are measuring, tends to favor true negatives.  If images end up more or less evenly distributed across the different clusters, you will get about 80% of them correct.  That's just a function of the fact that an image can only have 8 to 9 true positives, while it can have about 80 true negatives.  If it is in a  group of only about 10 to 15, that's only 14 fewer True Positives. So, if we don't get a huge clump in one cluster, then the accuracy will be in the ballpark of 80 percent.  For example, if we randonly placed the 93 images into a 10 groups, that would end up with a decent accuracy.
+Most surprising to me, is that I seemed to get results around 77-85%.  Which seemed really high to me.  However, the way we are measuring, tends to favor true negatives.  If images end up more or less evenly distributed across the different clusters, you will get about 80% of them correct.  That's just a function of the fact that an image can only have 8 to 9 true positives, while it can have about 80 true negatives.  If it is in a  group of only about 10 to 15, that's only 14 fewer True Positives. So, if we don't get a huge clump in one cluster, then the accuracy will be in the ballpark of 80 percent. For example, if we randonly placed the 93 images into a 10 groups, that would end up with a decent accuracy, and each image was in a group with none of colleagues, we still get ~75 TN for each.
 
 ## Recommendations for Improving Part 1
 
@@ -68,9 +68,23 @@ I used k-means for my clustering.  The biggest disadvantage of k-means is that a
 Similarily, I don't know if average distance is the best measurement.  Perhaps, it's the probability that something is a corner?  There are probbly countless ways to measure their connection. I would definitely look at different factors in the future for measuring them.
 
 ### Better Accuracy Method
-The method implemented for accuracy has a strong bias to True Negatives, and favors just about any system that results in well distributed groups. 
+The method implemented for accuracy has a strong bias to True Negatives, and favors just about any system that results in well distributed groups.  Perhaps, all we really only care about the True Positives.  That would yield drastically different results, although that would now favor all points being in one big cluster.  So, there's are other solutions, but they all have their issues, and probably work best for specific cases. Definitely something worth exploring in the future.
 
-# Part 2 - Transformation
+### Code Refactor
+With the amount of steps and things going on, there must be ways to optimize my code further.  I tried to used fast data structures like dictionaries as much as possible, which helped keep it low.  However, since this is the part of the assignment that takes even now about 25 minutes to run for the full test set, there are definitely opportunities to improve this.  Running RANSAC through my pairs is the most time intensive portion of this, but it is a step worth doing.  I would definitely find ways to improve my RANSAC for the future.
+
+# Part 2 - Image transformations
+This started with figuring out the mechanics of transforming this picture from the lincoln memorial:
+
+![input lincoln](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part2-images/lincoln.jpg)
+
+into this image:
+
+![warped lincoln](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part2-images/lincoln_test.jpg)
+
+That was a good introduction into how to do it.  Then, I worked on my book warping, should be.  Instead of starting at case 1, I actually ended up working backwards, and that worked out alright.
+
+Honestly, I didn't have too many tough decisions to make here since how to do it since it was outlined fairly well in the assignment prompt.  I do have a few things to say, but they are not relevant.
 
 ## What size should my output image be?
 This was something that early on, I thought would be straightforward, which like most items here, turned out to have some intricarcies.  Depending on the transform matrix applied, particularly for Rigid or Affine transformations, I would see my image get cut-off on the screen.
@@ -82,6 +96,10 @@ However, when I implemented get_shape, what was lost was the fact that in compar
 Ultiamtely, as a design decision, I decided to go with the original size of the image for cases, 2,3, and 4, so you could best see the difference in the transformation.  For case 1, I changed the shape so that the translated portion would appear black.  I left the function and offsets in place to improve on this in the future.
 
 ## Results
+This was pretty cool, when I was able to get the two book images to combine.
+![combined book - Tada!](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part2_4_output.jpg)
+
+If you flip between the book1 image image and the new image, the book in the middle does not move.  What is interesting is that the stuff around it does, because those are items that you can't shift, such as a shadow.
 
 ## Recommendations for Improving Part 2
 Here are some thoughts on how I could improve this part of my program.
@@ -89,11 +107,27 @@ Here are some thoughts on how I could improve this part of my program.
 ### Better Visualize the Movement
 As I stated in the "what size should my output image be?" section, I think there is a better way to visualize the transformations, than I have implemented.  If I had another cut at it, or use for this program, I would work further on this seemingly easy problem, that is not so easy.  
 
-# Part 3 - Merging
+### Error Checking
+I implemented almost no steps to make sure that the input points would not result in a non-invertible singular matrix.  Ideally, I could implement something that checked for a singular matrix, and then nudged the reference points a pixel or two in order to hopefully get a non-singular matrix.
+
+### Refactoring
+I cringe when I look at how the code is structured in part2().  However, with that part of the program only taking 10 seconds to run, there is little incentive to refactor the code for time.  It could be made clearer for readability.  However, as it is now, I think it makes it easier to compare the different types on matrices needed to perform the different kinds of transformations.
+
+# Part 3 - Automatic image matching and transformations
+This was by far the most interesting part where I combined elements from Part 1's image matching with Part2's transformation.
 
 ## RANSAC
+RANSAC was the means I used in order to find the transformation matrix
+
+I choose to do 500 iterations. Which is most cases, might be excessive, but not all of them.
 
 ## Results
+I think it's interesting that there are definitely still other items that would have to be corrected for, such as the fact that in one image, the table seems to be much larger than the other ones, so you end up with that table-in-table effect.
 
 ## Recommendations for Improving Part 3
+
+
+# Errata
+I learned so much about python and numpy data structures.  My favorite error is when I was trying to merge the images and average out the results.   As it turns out, if you attempt to add two 8-bit numpy integers, you get non-sensical answers, which result in merged images like the following:
+
 
