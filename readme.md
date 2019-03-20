@@ -124,22 +124,51 @@ First, I set some initial conditions.  The default for a transformation matrix w
 
 More importantly, I set my pixel threshold to be just three pixels.  This comes into play with counting inliers.   I would determine my inliers by picking four matches at random, and compute the transform matrix.  Then, I applied the transform matrix to the x,y in every match.  Which produced an x'o,y'o.  If those x'o,y'o were within three pixels in of the x',y' that were in the calculated matches, then that match was considered an inlier.  Otherwise, it was an outlier.
 
-I kept track of how many inliers each matrix had, and kept the highest number of inliers as I repeated this process. I choose to do 500 iterations. Which is most cases, might be excessive, but not all of them.  Since, I was picking 4 points at a random.  For just 20 points, that would mean 116280 different combinations.  Way more than I could test in a reasonable amount of time.  Since RANSAC only works if the majority are inliers, than it meant that I had a pretty good chance of landing on an inlier heavy matrix.  I found 500 to work almost all the time, if an image would be matched up.  It took only about a quarter of second for the harder cases.
-
-After 500 iterations, I passed the matrix and a revised matches list back to the program.  Earlier, I highlighted the before and after for the eiffel tower.
+I kept track of how many inliers each matrix had, and kept the highest number of inliers as I repeated this process. I choose to do 500 iterations. Which is most cases, might be excessive, but not all of them.  Since, I was picking 4 points at a random.  For just 20 points, that would mean 116280 different combinations.  Way more than I could test in a reasonable amount of time.  Since RANSAC only works if the majority are inliers, than it meant that I had a pretty good chance of landing on an inlier heavy matrix.  I found 500 to work almost all the time, if an image would be matched up.  It took between one-tenth and a quarter of second for the images with many matches.  When I passed this to part 1, that would mean that it would take about 1500 seconds to do all of the images.  Which was in the realm of responsible.
 
 ## Results
-I think it's interesting that there are definitely still other items that would have to be corrected for, such as the fact that in one image, the table seems to be much larger than the other ones, so you end up with that table-in-table effect.
+After 500 iterations, I passed the matrix and a revised matches list back to the program.  Earlier, I highlighted the before and after for the eiffel tower.  Here is what the combined image looks like, combining eiffel_18 and eiffel_19.
+
+![Eiffel is so pretty](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part3_output_eiffel.jpg)
+
+Here is what combining colosseum_4 and colosseum_5 look like:
+
+![Colosseum combination](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part3_output_colosseum.jpg)
+
+You can almost feel like you're in the arena. And, of course, our books from part2 have finally been reunited:
+
+![combined books](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part3_output_book2.jpg)
+
+Not bad! I think it's interesting that there are definitely still other items that would have to be corrected for, such as the fact that in one image, the table seems to be much larger than the other ones, so you end up with that table-in-table effect.
+
+Now, one thing that did come up is what happens when there are not enough points for a good transformation matrix.  Which is sadly what happened in the case of the Big Ben merger.  While before I noted it was able to line up the face of the clock, that was not enough for it to figure out how it was orientated.  The merger resulted in this psychedelic image:
+
+![sorry bigben](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part3_output_bigben.jpg)
+
+One of the things that was most interesting, was that I realized that my results here depends on a number of hand-tuned parameters:
+
+- Number of features detected
+- Threshold distance during matching
+- Use of Non-Maximal Suppression
+- RANSAC Pixel Threshold
+- Number of RANSAC iterations
+
+I observed a great amount of variation in my results as I would play around them, until I got to the ones I seem to be able to consistently get, at least with this dataset.
 
 ## Recommendations for Improving Part 3
 
 ### Image size
-As I mentioned earlier, trying to get the right size of the image left a few things in limbo.  And depending on which two images were being merged, there could have been some edges that get cut off.
+As I mentioned earlier, trying to get the right size of the image left a few things in limbo.  And depending on which two images were being merged, there could have been some edges that get cut off.  There is definite room for improvement here.
 
+### Speed
+If I could make this work faster, then it we could consider more varations of the four points, until the perfect.  Also, I could increase the number of matches or a wider theshold distance.
+
+### Modified RANSAC - Merge with A* ?
+This was my first experience with RANSAC, and I really liked how intuitive it was.  I think it could be further modified, where instead of picking four new matches each time, I only changed one point at a time, and used inliers as my heurestic.  This would be something like an A-star algorithm, where we keep looking for the best transformation matrix based on some heurestic and the path that has been taken.
 
 # Errata
 I learned so much about python and numpy data structures.  My favorite error is when I was trying to merge the images and average out the results.   As it turns out, if you attempt to add two 8-bit numpy integers, you get non-sensical answers, which result in merged images like the following:
 
 ![oops](https://github.iu.edu/cs-b657-sp2019/derrick-a2/blob/master/part3_book_test_bad_colors.jpg)
 
-
+Plus, I ran into all sorts of fun errors doing the matrix math.  It's amazing how much AI and computer vision involve the knowledge of so many different fields.

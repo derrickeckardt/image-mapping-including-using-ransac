@@ -29,25 +29,9 @@
 ################################################################################
 
 ################################################################################
-# To fix Part 1
-# - match to second best match
-# - record the points that are the match
-# - fix the inclusion of the directory where the images are, or ask Piazza Q
-# - adjust strength of link based on how good a match
-# - add voting somehow for matches
-# - Take the best x number (50?) best matches
-# - Add file output
-# - Add dynamic programming to speed up?
-# - For write-up -- how do we speed it up?
-# - functionize part 1 into parts
-#
-# To fix Part 2
-# - create better boudning boxes for part 2, 3, and perhaps 4
-# - Speed up bilineal by using a dictionary?  (Tried it, was acutally slower)
-# - refactor code to reduce redundancies between each
-#
+# To Do List
+# - Done.
 ################################################################################
-
 
 # import libraries
 import sys
@@ -61,7 +45,6 @@ import imageio
 from math import atan, cos, sin
 from pprint import pprint
 import profile
-# from numpy.linalg.LinAlgError import LinAlgError
 
 part = sys.argv[1]
 
@@ -241,6 +224,7 @@ def matching_test_image(matches_list,img1,img2):
 def get_points_from_matches(sample):
     return [[[pt1.pt[0],pt1.pt[1]],[pt2.pt[0],pt2.pt[1]]] for pt1,pt2,distance in sample]
 
+# checks if image is an inlier during ransac
 def inlier_check(threshold, tmatrix,x_o,y_o,xp_o,yp_o):
     xp_c, yp_c = forwardwarp_point(tmatrix, x_o,y_o)
     if abs(xp_c -xp_o) <= threshold and abs(yp_c-yp_o) <= threshold:
@@ -299,6 +283,7 @@ def ransac(matches_list):
         
     return best_tmatrix, new_matches_list
 
+# final output
 def print_output(groupings, output_file):
     output_txt= open(output_file,"w+")
     print(groupings.items())
