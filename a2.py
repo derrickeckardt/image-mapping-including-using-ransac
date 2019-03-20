@@ -548,6 +548,7 @@ def part3():
             output_im[y,x] = np.array([r, g,b])
 
     cv2.imwrite(output_im_file, output_im)
+    print("You may view the merged photo '"+output_im_file+"' now at your leisure.  Have a good evening.")
     
 if part == "part1":
     part1()
